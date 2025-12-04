@@ -19,7 +19,7 @@ export interface ClientConfig {
 export const clients: Record<string, ClientConfig> = {
   "white_dental": {
     google: {
-      serviceAccountPath: "./creds/white_dental_gcal.json",
+      serviceAccountPath: "./creds/dental_bot_creds.json",
       calendarId: "whitedental262@gmail.com"
     },
     meta: {

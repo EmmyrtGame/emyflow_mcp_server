@@ -27,6 +27,7 @@ export const calendarCheckAvailability = async (args: { client_id: string; start
     });
 
     const events = response.data.items || [];
+    console.log('DEBUG: Events found:', JSON.stringify(events, null, 2)); // Temporary debug log
     const isAvailable = events.length === 0;
 
     if (isAvailable) {

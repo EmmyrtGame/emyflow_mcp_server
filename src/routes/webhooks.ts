@@ -19,6 +19,7 @@ router.post('/whatsapp', (req, res) => {
     // Basic validation for Wassenger webhook structure
     if (!data || !data.fromNumber || !data.body) {
        // Just acknowledge if not a valid message event
+       console.log('Webhook received but missing data:', req.body);
        return res.status(200).send('OK');
     }
 

@@ -2,8 +2,8 @@ import { google } from 'googleapis';
 import { clients } from '../config/clients';
 import { z } from 'zod';
 
-export const calendarCheckAvailability = async (args: { client_id: string; start_time: string; end_time: string }) => {
-  const { client_id, start_time, end_time } = args;
+export const calendarCheckAvailability = async (args: { client_id: string; start_time?: string; end_time?: string; query_date?: string }) => {
+  const { client_id, start_time, end_time, query_date } = args;
   const clientConfig = clients[client_id];
 
   if (!clientConfig) {
@@ -17,32 +17,83 @@ export const calendarCheckAvailability = async (args: { client_id: string; start
 
   const calendar = google.calendar({ version: 'v3', auth });
 
+  // Determine the day to check
+  let targetDate: Date;
+  if (start_time) {
+    targetDate = new Date(start_time);
+  } else if (query_date) {
+    targetDate = new Date(query_date);
+  } else {
+    targetDate = new Date(); // Default to today
+  }
+
+  // Set range for the full day (00:00 to 23:59)
+  const dayStart = new Date(targetDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(targetDate);
+  dayEnd.setHours(23, 59, 59, 999);
+
   try {
+    // 1. Fetch ALL events for the day
     const response = await calendar.events.list({
       calendarId: clientConfig.google.calendarId,
-      timeMin: start_time,
-      timeMax: end_time,
+      timeMin: dayStart.toISOString(),
+      timeMax: dayEnd.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });
 
     const events = response.data.items || [];
-    console.log('DEBUG: Events found:', JSON.stringify(events, null, 2)); // Temporary debug log
-    const isAvailable = events.length === 0;
+    
+    // 2. Generate Day Summary (Free/Busy slots)
+    // Simple logic: List busy times, everything else is free
+    const busySlots = events.map(e => {
+      const start = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+      const end = e.end?.dateTime ? new Date(e.end.dateTime).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+      return `${start} - ${end} (Ocupado)`;
+    });
 
-    if (isAvailable) {
-      return { content: [{ type: "text", text: JSON.stringify({ available: true }) }] };
-    } else {
-      return { 
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify({ 
-            available: false, 
-            conflicts: events.map(e => ({ start: e.start?.dateTime, end: e.end?.dateTime })) 
-          }) 
-        }] 
-      };
+    const dayContext = busySlots.length > 0 
+      ? `Agenda del día:\n${busySlots.join('\n')}` 
+      : "Todo el día está libre.";
+
+    // 3. Check Specific Slot (if requested)
+    let isSpecificSlotAvailable = true;
+    let conflictDetails = null;
+
+    if (start_time && end_time) {
+      const checkStart = new Date(start_time).getTime();
+      const checkEnd = new Date(end_time).getTime();
+
+      const conflict = events.find(e => {
+        const eventStart = new Date(e.start?.dateTime || '').getTime();
+        const eventEnd = new Date(e.end?.dateTime || '').getTime();
+        return (checkStart < eventEnd && checkEnd > eventStart); // Overlap formula
+      });
+
+      if (conflict) {
+        isSpecificSlotAvailable = false;
+        conflictDetails = {
+          start: conflict.start?.dateTime,
+          end: conflict.end?.dateTime,
+          summary: conflict.summary
+        };
+      }
     }
+
+    // 4. Construct Response
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          available: isSpecificSlotAvailable,
+          status: isSpecificSlotAvailable ? "Slot available" : "Slot busy",
+          day_context: dayContext,
+          conflict: conflictDetails
+        })
+      }]
+    };
+
   } catch (error: any) {
     console.error('Error checking availability:', error);
     throw new Error(`Failed to check availability: ${error.message}`);

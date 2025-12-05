@@ -1,15 +1,15 @@
 import { calendarCheckAvailability } from './src/tools/calendar';
 
 const testCalendar = async () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const hoy = new Date();
+    hoy.setDate(hoy.getDate());
     
     // Scenario 1: Specific Slot (likely free)
-    const start1 = new Date(tomorrow); start1.setHours(10, 0, 0, 0);
-    const end1 = new Date(tomorrow); end1.setHours(11, 0, 0, 0);
+    const start1 = new Date(hoy); start1.setHours(10, 0, 0, 0);
+    const end1 = new Date(hoy); end1.setHours(11, 0, 0, 0);
 
     // Scenario 2: Whole Day Query
-    const queryDate = tomorrow.toISOString();
+    const queryDate = hoy.toISOString();
 
     console.log('--- TEST 1: Specific Slot ---');
     try {

@@ -34,16 +34,30 @@ export const calendarCheckAvailability = async (args: { client_id: string; start
   dayEnd.setHours(23, 59, 59, 999);
 
   try {
-    // 1. Fetch ALL events for the day
-    const response = await calendar.events.list({
-      calendarId: clientConfig.google.calendarId,
-      timeMin: dayStart.toISOString(),
-      timeMax: dayEnd.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
+    // 1. Fetch ALL events for the day from ALL calendars
+    const calendarPromises = clientConfig.google.availabilityCalendars.map(async (calId) => {
+      try {
+        const response = await calendar.events.list({
+          calendarId: calId,
+          timeMin: dayStart.toISOString(),
+          timeMax: dayEnd.toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime',
+        });
+        return response.data.items || [];
+      } catch (err) {
+        console.error(`Error fetching events from ${calId}:`, err);
+        return []; // Continue even if one calendar fails
+      }
     });
 
-    const events = response.data.items || [];
+    const results = await Promise.all(calendarPromises);
+    // Flatten and sort events by start time
+    const events = results.flat().sort((a, b) => {
+      const tA = new Date(a.start?.dateTime || 0).getTime();
+      const tB = new Date(b.start?.dateTime || 0).getTime();
+      return tA - tB;
+    });
     
     // 2. Generate Day Summary (Free/Busy slots)
     // Simple logic: List busy times, everything else is free
@@ -122,7 +136,7 @@ export const calendarCreateAppointment = async (args: {
 
   // Double check availability
   const availabilityCheck = await calendar.events.list({
-    calendarId: clientConfig.google.calendarId,
+    calendarId: clientConfig.google.bookingCalendarId,
     timeMin: start_time,
     timeMax: end_time,
     singleEvents: true,
@@ -141,7 +155,7 @@ export const calendarCreateAppointment = async (args: {
     };
 
     const response = await calendar.events.insert({
-      calendarId: clientConfig.google.calendarId,
+      calendarId: clientConfig.google.bookingCalendarId,
       requestBody: event,
     });
 

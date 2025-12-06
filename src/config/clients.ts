@@ -15,6 +15,11 @@ export interface ClientConfig {
     apiKey: string;
     deviceId: string;
   };
+  reminderTemplates: {
+    "24h": string;
+    "3h": string;
+    "1h": string;
+  };
 }
 
 export const clients: Record<string, ClientConfig> = {
@@ -31,6 +36,11 @@ export const clients: Record<string, ClientConfig> = {
     wassenger: {
       apiKey: process.env.WHITE_DENTAL_WASSENGER_TOKEN || "",
       deviceId: "68fd1067b488de07029fccc2"
+    },
+    reminderTemplates: {
+      "24h": "Hola {name}, recordatorio de tu cita mañana a las {time}. Si necesitas reagendar, avísanos con tiempo.",
+      "3h": "Hola {name}, te recordamos tu cita hoy a las {time}.",
+      "1h": "Hola {name}, nos vemos en 1 hora para tu cita a las {time}."
     }
   },
   "test_dental": {
@@ -46,6 +56,11 @@ export const clients: Record<string, ClientConfig> = {
     wassenger: {
       apiKey: process.env.WHITE_DENTAL_WASSENGER_TOKEN || "",
       deviceId: "68fd1067b488de07029fccc2"
+    },
+    reminderTemplates: {
+      "24h": "Hola {name}, recordatorio de tu cita mañana a las {time}. Si necesitas reagendar, avísanos con tiempo.",
+      "3h": "Hola {name}, te recordamos tu cita hoy a las {time}.",
+      "1h": "Hola {name}, nos vemos en 1 hora para tu cita a las {time}."
     }
   },
   // Add other clients here

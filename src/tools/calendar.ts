@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { clients } from '../config/clients';
 import { z } from 'zod';
+import { scheduleAppointmentReminders } from './wassenger';
 
 export const calendarCheckAvailability = async (args: { client_id: string; start_time?: string; end_time?: string; query_date?: string }) => {
   const { client_id, start_time, end_time, query_date } = args;
@@ -171,7 +172,13 @@ export const calendarCreateAppointment = async (args: {
       requestBody: event,
     });
 
-    // TODO: Trigger WhatsApp confirmation via Wassenger API (Optimization)
+    // Trigger WhatsApp confirmation and scheduled reminders
+    await scheduleAppointmentReminders(
+      client_id, 
+      patient_data.telefono, 
+      start_time, 
+      patient_data.nombre
+    );
 
     return { content: [{ type: "text", text: JSON.stringify({ success: true, eventId: response.data.id }) }] };
   } catch (error: any) {

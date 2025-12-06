@@ -1,4 +1,4 @@
-import { crmHandoffHuman } from './src/tools/crm';
+import { crmHandoffHuman } from '../src/tools/crm';
 import dotenv from 'dotenv';
 
 dotenv.config();

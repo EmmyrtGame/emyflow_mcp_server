@@ -1,4 +1,4 @@
-import { calendarCheckAvailability, calendarCreateAppointment } from './src/tools/calendar';
+import { calendarCheckAvailability, calendarCreateAppointment } from '../src/tools/calendar';
 import dotenv from 'dotenv';
 
 dotenv.config();

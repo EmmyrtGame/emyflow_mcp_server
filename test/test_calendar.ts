@@ -1,4 +1,4 @@
-import { calendarCheckAvailability } from './src/tools/calendar';
+import { calendarCheckAvailability } from '../src/tools/calendar';
 
 const testCalendar = async () => {
     const hoy = new Date();

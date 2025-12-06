@@ -34,38 +34,46 @@ export const buildCapiPayload = (args: any, clientConfig: any) => {
   };
 };
 
-export const capiSendEvent = async (args: {
+export const trackScheduleEvent = async (args: {
   client_id: string;
-  event_name: "Lead" | "Purchase" | "Schedule";
   user_data: { 
-    phone?: string; 
+    phone: string; 
     email?: string; 
     fbp?: string; 
     fbc?: string;
-    client_user_agent?: string;
-    client_ip_address?: string;
   };
-  event_source_url?: string;
-  event_id?: string;
-  action_source?: string;
 }) => {
-  const { client_id } = args;
-  const clientConfig = clients[client_id];
-
-  if (!clientConfig) {
-    throw new Error(`Client ${client_id} not found`);
-  }
-
-  const payload = buildCapiPayload(args, clientConfig);
-
+  const { client_id, user_data } = args;
+  
+  // Wrap in try-catch to ensure it never blocks the main flow
   try {
+    const clientConfig = clients[client_id];
+    if (!clientConfig) {
+      console.warn(`[Marketing] Client ${client_id} not found, skipping tracking.`);
+      return;
+    }
+
+    // Default to 'chat' since this is an internal automated system, mostly likely from whatsapp flow
+    // But typically schedule comes from system, so 'chat' or 'website' (if web booking).
+    // Given the context of Wassenger usage, 'chat' is safer or just stick to 'website' if it's the default.
+    // User mentioned "no quiero que forme parte del servidor MCP... agentes de IA... alucionaciones"
+    // implies backend automation.
+    // Let's use "chat" as discussed previously for WhatsApp flow compatibility.
+    const payload = buildCapiPayload({
+      event_name: 'Schedule',
+      user_data: user_data,
+      action_source: 'chat'
+    }, clientConfig);
+
     const response = await axios.post(
       `https://graph.facebook.com/v18.0/${clientConfig.meta.pixelId}/events`,
       payload
     );
-    return { content: [{ type: "text", text: JSON.stringify(response.data) }] };
+    console.log(`[Marketing] Schedule event tracked for ${user_data.phone}:`, response.data);
+    return { success: true };
   } catch (error: any) {
-    console.error('Error sending CAPI event:', error.response?.data || error.message);
-    throw new Error(`Failed to send CAPI event: ${error.message}`);
+    // Log but do not throw
+    console.error('[Marketing] Error tracking schedule event:', error.response?.data || error.message);
+    return { success: false, error: error.message };
   }
 };

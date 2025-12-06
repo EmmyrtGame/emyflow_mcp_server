@@ -60,32 +60,6 @@ export const startMcpServer = async () => {
           }
         },
         {
-          name: "capi_send_event",
-          description: "Send event to Meta CAPI",
-          inputSchema: {
-            type: "object",
-            properties: {
-              client_id: { type: "string" },
-              event_name: { type: "string", enum: ["Lead", "Purchase", "Schedule"] },
-              user_data: {
-                type: "object",
-                properties: {
-                  phone: { type: "string" },
-                  email: { type: "string" },
-                  fbp: { type: "string" },
-                  fbc: { type: "string" },
-                  client_user_agent: { type: "string" },
-                  client_ip_address: { type: "string" }
-                }
-              },
-              event_source_url: { type: "string" },
-              event_id: { type: "string" },
-              action_source: { type: "string" }
-            },
-            required: ["client_id", "event_name", "user_data"]
-          }
-        },
-        {
           name: "crm_handoff_human",
           description: "Handoff to human agent",
           inputSchema: {
@@ -117,10 +91,6 @@ export const startMcpServer = async () => {
       case "calendar_create_appointment": {
         const { calendarCreateAppointment } = await import("../tools/calendar");
         return calendarCreateAppointment(args as any);
-      }
-      case "capi_send_event": {
-        const { capiSendEvent } = await import("../tools/marketing");
-        return capiSendEvent(args as any);
       }
       case "crm_handoff_human": {
         const { crmHandoffHuman } = await import("../tools/crm");

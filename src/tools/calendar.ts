@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { clients } from '../config/clients';
 import { z } from 'zod';
 import { scheduleAppointmentReminders } from './wassenger';
+import { trackScheduleEvent } from './marketing';
 
 export const calendarCheckAvailability = async (args: { client_id: string; start_time?: string; end_time?: string; query_date?: string }) => {
   const { client_id, start_time, end_time, query_date } = args;
@@ -179,6 +180,15 @@ export const calendarCreateAppointment = async (args: {
       start_time, 
       patient_data.nombre
     );
+
+    // Track Schedule event in Meta CAPI (fire and forget / non-blocking)
+    trackScheduleEvent({
+      client_id,
+      user_data: {
+        phone: patient_data.telefono,
+        email: patient_data.email
+      }
+    });
 
     return { content: [{ type: "text", text: JSON.stringify({ success: true, eventId: response.data.id }) }] };
   } catch (error: any) {

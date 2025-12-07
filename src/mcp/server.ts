@@ -18,8 +18,10 @@ const server = new Server({
   }
 });
 
+/**
+ * Starts the MCP server, defining tools and handling requests.
+ */
 export const startMcpServer = async () => {
-  // List Tools Handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
@@ -75,7 +77,7 @@ export const startMcpServer = async () => {
     };
   });
 
-  // Call Tool Handler
+
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
@@ -101,7 +103,7 @@ export const startMcpServer = async () => {
     }
   });
 
-  // Connect via Stdio transport
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 };

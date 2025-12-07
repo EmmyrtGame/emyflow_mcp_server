@@ -2,11 +2,22 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { clients } from '../config/clients';
 
+/**
+ * Hashes a string using SHA-256.
+ * @param data The string to hash.
+ * @returns The hex-encoded hash.
+ */
 const hashData = (data: string) => {
   return crypto.createHash('sha256').update(data).digest('hex');
 };
 
 
+/**
+ * Builds the payload for Meta CAPI.
+ * @param args The event arguments.
+ * @param clientConfig The client configuration.
+ * @returns The formatted payload.
+ */
 export const buildCapiPayload = (args: any, clientConfig: any) => {
   const { event_name, user_data, event_source_url, event_id, action_source = "website", test_event_code } = args;
 
@@ -40,6 +51,12 @@ export const buildCapiPayload = (args: any, clientConfig: any) => {
   return payload;
 };
 
+/**
+ * Tracks a 'Schedule' event to Meta CAPI.
+ * @param args.client_id The client identifier.
+ * @param args.user_data User data for matching (phone, email, fbp, fbc).
+ * @param args.test_event_code Optional test event code.
+ */
 export const trackScheduleEvent = async (args: {
   client_id: string;
   user_data: { 
@@ -51,8 +68,6 @@ export const trackScheduleEvent = async (args: {
   test_event_code?: string;
 }) => {
   const { client_id, user_data, test_event_code } = args;
-  
-  // Wrap in try-catch to ensure it never blocks the main flow
   try {
     const clientConfig = clients[client_id];
     if (!clientConfig) {
@@ -74,12 +89,17 @@ export const trackScheduleEvent = async (args: {
     console.log(`[Marketing] Schedule event tracked for ${user_data.phone}:`, response.data);
     return { success: true };
   } catch (error: any) {
-    // Log but do not throw
     console.error('[Marketing] Error tracking schedule event:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 };
 
+/**
+ * Tracks a 'Lead' event to Meta CAPI.
+ * @param args.client_id The client identifier.
+ * @param args.user_data User data for matching (phone, email, fbp, fbc).
+ * @param args.test_event_code Optional test event code.
+ */
 export const trackLeadEvent = async (args: {
   client_id: string;
   user_data: { 

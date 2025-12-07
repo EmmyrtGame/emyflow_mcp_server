@@ -56,10 +56,8 @@ export const scheduleAppointmentReminders = async (
   const appointmentTime = new Date(appointmentTimeStr);
   const now = new Date();
 
-  // Helper to format time for the message
   const timeFormatted = appointmentTime.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
   
-  // Calculate reminder times
   const reminders = [
     { label: '24h', details: { hours: 24 } },
     { label: '3h', details: { hours: 3 } },
@@ -73,7 +71,6 @@ export const scheduleAppointmentReminders = async (
     const reminderTime = new Date(appointmentTime);
     reminderTime.setHours(reminderTime.getHours() - reminder.details.hours);
 
-    // Only schedule if the reminder time is in the future
     if (reminderTime > now) {
       const message = template
         .replace('{name}', patientName)

@@ -43,25 +43,6 @@ export const clients: Record<string, ClientConfig> = {
       "1h": "Hola {name}, nos vemos en 1 hora para tu cita a las {time}."
     }
   },
-  /*"test_dental": {
-    google: {
-      serviceAccountPath: "./creds/dental_bot_creds.json",
-      availabilityCalendars: ["emmmyrtgame@gmail.com", "emmyrttutoriales@gmail.com"], // Add other calendars here if needed
-      bookingCalendarId: "emmmyrtgame@gmail.com"
-    },
-    meta: {
-      pixelId: "123456789", // Placeholder
-      accessToken: process.env.WHITE_DENTAL_META_TOKEN || ""
-    },
-    wassenger: {
-      apiKey: process.env.WHITE_DENTAL_WASSENGER_TOKEN || "",
-      deviceId: "68fd1067b488de07029fccc2"
-    },
-    reminderTemplates: {
-      "24h": "Hola {name}, recordatorio de tu cita mañana a las {time}. Si necesitas reagendar, avísanos con tiempo.",
-      "3h": "Hola {name}, te recordamos tu cita hoy a las {time}.",
-      "1h": "Hola {name}, nos vemos en 1 hora para tu cita a las {time}."
-    }
-  },*/
+
   // Add other clients here
 };

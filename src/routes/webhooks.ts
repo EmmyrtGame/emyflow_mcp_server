@@ -1,5 +1,7 @@
 import express from 'express';
 import axios from 'axios';
+import { clients } from '../config/clients';
+import { trackLeadEvent } from '../tools/marketing';
 
 const router = express.Router();
 
@@ -25,6 +27,30 @@ router.post('/whatsapp', (req, res) => {
 
     const userId = data.fromNumber;
     const messageBody = data.body;
+    
+    // Check for Lead Event (Inbound reply that is NOT the first message)
+    if (data.flow === 'inbound' && data.meta && data.meta.isFirstMessage === false) {
+       // Identify Client from Device ID
+       // payload structure: req.body.device.id or req.body.data.device? User payload shows top level "device" object with "id"
+       // But wait, the user provided payload shows "device" at root level AND "data" at root level.
+       const deviceId = req.body.device?.id;
+       
+       if (deviceId) {
+          const clientEntry = Object.entries(clients).find(([_, config]: [string, any]) => config.wassenger.deviceId === deviceId);
+          if (clientEntry) {
+             const [clientId, _] = clientEntry;
+             console.log(`[Webhook] Detected potential Lead for client ${clientId} (Device: ${deviceId})`);
+             
+             // Track Lead Event asynchronously
+             trackLeadEvent({
+               client_id: clientId,
+               user_data: {
+                 phone: userId // fromNumber
+               }
+             }).catch((err: any) => console.error('[Webhook] Failed to track automated Lead:', err));
+          }
+       }
+    }
 
     // If buffer exists for this user, clear the timer
     if (messageBuffer[userId]) {

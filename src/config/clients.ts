@@ -30,7 +30,7 @@ export const clients: Record<string, ClientConfig> = {
       bookingCalendarId: "whitedental262@gmail.com"
     },
     meta: {
-      pixelId: "123456789", // Placeholder
+      pixelId: "836238362237559", // Placeholder
       accessToken: process.env.WHITE_DENTAL_META_TOKEN || ""
     },
     wassenger: {

@@ -105,6 +105,7 @@ export const startMcpServer = async () => {
   });
 
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  // const transport = new StdioServerTransport();
+  // await server.connect(transport);
+  console.log('MCP Stdio Server transport skipped for web deployment');
 };

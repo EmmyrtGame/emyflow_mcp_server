@@ -24,7 +24,7 @@ app.use('/webhooks', webhookRoutes);
 // --- MCP SSE Transport Setup ---
 let transport: SSEServerTransport | null = null;
 
-app.get('/sse', async (req, res) => {
+app.all('/sse', async (req, res) => {
   console.log('New SSE connection established');
   transport = new SSEServerTransport('/messages', res);
   await server.connect(transport);

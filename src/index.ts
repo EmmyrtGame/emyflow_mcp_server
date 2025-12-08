@@ -16,43 +16,31 @@ app.use(cors());
 // app.use(express.json()); // Moved to specific routes to avoid conflict with MCP SDK
 
 // ---------------- LOGGING SETUP ----------------
-import fs from 'fs';
-import path from 'path';
+// IN-MEMORY LOGGING (Avoids file system permission issues)
+const logs: string[] = [];
+const MAX_LOGS = 500;
 
-const LOG_FILE = path.join(__dirname, '../server.log');
-
-const logToFile = (message: string) => {
+const logToMemory = (message: string) => {
   const timestamp = new Date().toISOString();
-  const logLine = `[${timestamp}] ${message}\n`;
-  console.log(message); // Still log to console
-  try {
-    fs.appendFileSync(LOG_FILE, logLine);
-  } catch (err) {
-    console.error('Failed to write to log file:', err);
+  const logLine = `[${timestamp}] ${message}`;
+  console.log(message); // Keep console log just in case
+  
+  logs.push(logLine);
+  if (logs.length > MAX_LOGS) {
+    logs.shift(); // Remove oldest
   }
 };
 
-// Clear log on startup
-try {
-  fs.writeFileSync(LOG_FILE, '--- Server Restarted ---\n');
-} catch (e) {}
-
 // Global Request Logger
 app.use((req, res, next) => {
-  logToFile(`${req.method} ${req.url} - IP: ${req.ip}`);
-  logToFile(`Headers: ${JSON.stringify(req.headers)}`);
+  logToMemory(`${req.method} ${req.url} - IP: ${req.ip}`);
   next();
 });
 
-// Log Viewer Endpoint (So you can see it in browser)
+// Log Viewer Endpoint
 app.get('/logs', (req, res) => {
-  try {
-    const logs = fs.readFileSync(LOG_FILE, 'utf8');
-    res.setHeader('Content-Type', 'text/plain');
-    res.send(logs);
-  } catch (err) {
-    res.status(500).send('Could not read logs');
-  }
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(logs.join('\n'));
 });
 // ----------------------------------------------
 
@@ -67,7 +55,7 @@ app.use('/webhooks', express.json(), webhookRoutes);
 const transports = new Map<string, SSEServerTransport>();
 
 app.get('/sse', async (req, res) => {
-  logToFile('New SSE connection attempt received');
+  logToMemory('New SSE connection attempt received');
   
   // 1. Set headers manually to ensure correct SSE setup and anti-buffering
   res.setHeader('Content-Type', 'text/event-stream');
@@ -86,13 +74,13 @@ app.get('/sse', async (req, res) => {
   const host = req.headers.host;
   const endpointUrl = `https://slategray-baboon-146694.hostingersite.com/messages`;
 
-  logToFile(`Setting up transport with endpoint: ${endpointUrl}`);
+  logToMemory(`Setting up transport with endpoint: ${endpointUrl}`);
 
   const server = createMcpServer();
   const transport = new SSEServerTransport(endpointUrl, res);
   
   // Connect the server to the transport
-  logToFile('Connecting server to transport...');
+  logToMemory('Connecting server to transport...');
   await server.connect(transport);
   
   // 4. Send padding AFTER connection is established (headers sent) to bypass buffering
@@ -102,12 +90,12 @@ app.get('/sse', async (req, res) => {
   const sessionId = (transport as any).sessionId;
   if (sessionId) {
     transports.set(sessionId, transport);
-    logToFile(`SSE Session created: ${sessionId}`);
+    logToMemory(`SSE Session created: ${sessionId}`);
   }
 
   // Cleanup on connection close
   res.on('close', () => {
-    logToFile(`SSE connection closed for session: ${sessionId}`);
+    logToMemory(`SSE connection closed for session: ${sessionId}`);
     if (sessionId) {
       transports.delete(sessionId);
     }
@@ -116,8 +104,8 @@ app.get('/sse', async (req, res) => {
 
 app.post('/messages', async (req, res) => {
   const sessionId = req.query.sessionId as string;
-  logToFile(`POST /messages received. SessionId: ${sessionId}`);
-  logToFile(`Request Readable: ${req.readable}, Complete: ${req.complete}`);
+  logToMemory(`POST /messages received. SessionId: ${sessionId}`);
+  logToMemory(`Request Readable: ${req.readable}, Complete: ${req.complete}`);
   
   if (!sessionId) {
     res.status(400).send('Missing sessionId parameter');
@@ -126,18 +114,18 @@ app.post('/messages', async (req, res) => {
 
   const transport = transports.get(sessionId);
   if (!transport) {
-    logToFile(`Session not found or expired: ${sessionId}`);
+    logToMemory(`Session not found or expired: ${sessionId}`);
     res.status(404).send('Session not found or expired');
     return;
   }
 
   try {
-    logToFile('Handling POST message via transport...');
+    logToMemory('Handling POST message via transport...');
     await transport.handlePostMessage(req, res);
-    logToFile('POST message handled successfully');
+    logToMemory('POST message handled successfully');
   } catch (error: any) {
-    logToFile(`Error handling POST message: ${error.message}`);
-    logToFile(`Stack: ${error.stack}`);
+    logToMemory(`Error handling POST message: ${error.message}`);
+    logToMemory(`Stack: ${error.stack}`);
     res.status(500).send(error.message);
   }
 });
@@ -146,11 +134,11 @@ app.post('/messages', async (req, res) => {
 const startServer = async () => {
   try {
     // await startMcpServer(); // Removed: server is now created per connection
-    logToFile('MCP Server starting...');
+    logToMemory('MCP Server starting...');
 
     app.listen(PORT, () => {
       console.log(`Express server running on port ${PORT}`);
-      logToFile(`Express server running on port ${PORT}`);
+      logToMemory(`Express server running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

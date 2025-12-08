@@ -28,6 +28,15 @@ const transports = new Map<string, SSEServerTransport>();
 app.get('/sse', async (req, res) => {
   console.log('New SSE connection attempt');
   
+  // Prevent buffering on Nginx/Hostinger
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  
+  // Flush immediately if possible
+  if (res.flushHeaders) res.flushHeaders();
+
   const server = createMcpServer();
   const transport = new SSEServerTransport('/messages', res);
   

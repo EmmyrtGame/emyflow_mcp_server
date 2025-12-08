@@ -13,13 +13,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+// app.use(express.json()); // Moved to specific routes to avoid conflict with MCP SDK
 
 app.get('/', (req, res) => {
   res.send('MCP Server is running');
 });
 
-app.use('/webhooks', webhookRoutes);
+app.use('/webhooks', express.json(), webhookRoutes);
 
 // --- MCP SSE Transport Setup ---
 // Store active transports by sessionId

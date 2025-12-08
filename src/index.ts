@@ -37,15 +37,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Log Viewer Endpoint
-app.get('/logs', (req, res) => {
-  res.setHeader('Content-Type', 'text/plain');
-  res.send(logs.join('\n'));
-});
-// ----------------------------------------------
-
 app.get('/', (req, res) => {
-  res.send('MCP Server is running. Check /logs for debug info.');
+  res.send('MCP Server is running.');
 });
 
 app.use('/webhooks', express.json(), webhookRoutes);

@@ -144,8 +144,9 @@ export const calendarCreateAppointment = async (args: {
   patient_data: { nombre: string; telefono: string; email: string; motivo: string };
   start_time: string; 
   end_time: string;
+  description: string;
 }) => {
-  const { client_id, patient_data, start_time, end_time } = args;
+  const { client_id, patient_data, start_time, end_time, description } = args;
   const clientConfig = clients[client_id];
 
   if (!clientConfig) {
@@ -186,7 +187,7 @@ export const calendarCreateAppointment = async (args: {
   try {
     const event = {
       summary: `Cita: ${patient_data.nombre} - ${patient_data.motivo}`,
-      description: `Tel: ${patient_data.telefono}\nEmail: ${patient_data.email}`,
+      description: description,
       start: { dateTime: start_time },
       end: { dateTime: end_time },
     };

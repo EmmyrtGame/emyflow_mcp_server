@@ -55,9 +55,10 @@ export const createMcpServer = () => {
                 required: ["nombre", "telefono", "email", "motivo"]
               },
               start_time: { type: "string", description: "Start time of the appointment (ISO string)" },
-              end_time: { type: "string", description: "End time of the appointment (ISO string)" }
+              end_time: { type: "string", description: "End time of the appointment (ISO string)" },
+              description: { type: "string", description: "Description for the calendar event. Should include patient contact info (phone, email) and any other notes." }
             },
-            required: ["client_id", "patient_data", "start_time", "end_time"]
+            required: ["client_id", "patient_data", "start_time", "end_time", "description"]
           }
         },
         {

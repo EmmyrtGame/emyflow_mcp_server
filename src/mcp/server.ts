@@ -43,7 +43,7 @@ export const createMcpServer = () => {
           inputSchema: {
             type: "object",
             properties: {
-              client_id: { type: "string", description: "The unique identifier for the dental clinic (e.g., 'dental_clinic_a'). MUST use the ID provided in the current context. DO NOT GUESS or hallucinate." },
+              client_id: { type: "string", description: "The unique identifier for the dental clinic (e.x., 'dental_clinic_a'). MUST use the ID provided in the current context. DO NOT GUESS or hallucinate." },
               patient_data: {
                 type: "object",
                 properties: {

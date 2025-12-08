@@ -9,7 +9,7 @@ import {
 import { z } from "zod";
 
 // Create an MCP server
-const server = new Server({
+export const server = new Server({
   name: "DentalClinicMCP",
   version: "1.0.0"
 }, {
@@ -105,7 +105,7 @@ export const startMcpServer = async () => {
   });
 
 
-  // const transport = new StdioServerTransport();
-  // await server.connect(transport);
-  console.log('MCP Stdio Server transport skipped for web deployment');
+  // Transport connection skipped here.
+  // It will be handled in ../index.ts using SSEServerTransport for web
+  console.log('MCP Tools configured. Ready for transport connection.');
 };

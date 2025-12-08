@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { startMcpServer } from './mcp/server';
+import { startMcpServer, server } from './mcp/server';
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { clients } from './config/clients';
 
 dotenv.config();
@@ -19,6 +20,24 @@ app.get('/', (req, res) => {
 });
 
 app.use('/webhooks', webhookRoutes);
+
+// --- MCP SSE Transport Setup ---
+let transport: SSEServerTransport | null = null;
+
+app.get('/sse', async (req, res) => {
+  console.log('New SSE connection established');
+  transport = new SSEServerTransport('/messages', res);
+  await server.connect(transport);
+});
+
+app.post('/messages', async (req, res) => {
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  } else {
+    res.status(400).send('No active SSE connection');
+  }
+});
+// -------------------------------
 
 const startServer = async () => {
   try {

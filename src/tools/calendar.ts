@@ -35,19 +35,24 @@ export const calendarCheckAvailability = async (args: { client_id: string; start
     targetDate = new Date(); // Default to today
   }
 
-
-  const dayStart = new Date(targetDate);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(targetDate);
-  dayEnd.setHours(23, 59, 59, 999);
+  // Calculate time range in UTC that covers the entire day in the target timezone
+  // We widen the search window (e.g. -24h to +24h from UTC midnight) to ensure we capture
+  // the full local day regardless of timezone offset. We will filter later.
+  const searchStart = new Date(targetDate);
+  searchStart.setHours(0, 0, 0, 0);
+  searchStart.setDate(searchStart.getDate() - 1); // Previous day
+  
+  const searchEnd = new Date(targetDate);
+  searchEnd.setHours(23, 59, 59, 999);
+  searchEnd.setDate(searchEnd.getDate() + 1); // Next day
 
   try {
     const calendarPromises = clientConfig.google.availabilityCalendars.map(async (calId) => {
       try {
         const response = await calendar.events.list({
           calendarId: calId,
-          timeMin: dayStart.toISOString(),
-          timeMax: dayEnd.toISOString(),
+          timeMin: searchStart.toISOString(),
+          timeMax: searchEnd.toISOString(),
           singleEvents: true,
           orderBy: 'startTime',
         });
@@ -59,16 +64,24 @@ export const calendarCheckAvailability = async (args: { client_id: string; start
     });
 
     const results = await Promise.all(calendarPromises);
-    // Flatten and sort events by start time
-    const events = results.flat().sort((a, b) => {
+    const allEvents = results.flat();
+
+    // Filter events to only those that fall within the target day in the client's timezone
+    const targetDateString = query_date || new Date().toLocaleDateString('en-CA', { timeZone: clientConfig.timezone }); // YYYY-MM-DD
+    
+    const events = allEvents.filter(e => {
+      if (!e.start?.dateTime) return false;
+      const eventDateInZone = new Date(e.start.dateTime).toLocaleDateString('en-CA', { timeZone: clientConfig.timezone });
+      return eventDateInZone === targetDateString;
+    }).sort((a, b) => {
       const tA = new Date(a.start?.dateTime || 0).getTime();
       const tB = new Date(b.start?.dateTime || 0).getTime();
       return tA - tB;
     });
     
     const busySlots = events.map(e => {
-      const start = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-      const end = e.end?.dateTime ? new Date(e.end.dateTime).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+      const start = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: clientConfig.timezone }) : 'N/A';
+      const end = e.end?.dateTime ? new Date(e.end.dateTime).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: clientConfig.timezone }) : 'N/A';
       return `${start} - ${end} (Ocupado)`;
     });
 

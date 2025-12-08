@@ -24,6 +24,7 @@ export interface ClientConfig {
     "3h": string;
     "1h": string;
   };
+  timezone: string;
 }
 
 export const clients: Record<string, ClientConfig> = {
@@ -33,6 +34,7 @@ export const clients: Record<string, ClientConfig> = {
       availabilityCalendars: ["whitedental262@gmail.com", "dentalcareagenda321@gmail.com", "e1f1a4da8d0ff750657414b4e7699bdd946ab5c136fd86a49dd2dc5ef351495b@group.calendar.google.com"], // Add other calendars here if needed
       bookingCalendarId: "whitedental262@gmail.com"
     },
+    timezone: "America/Mexico_City",
     meta: {
       pixelId: "836238362237559", // Placeholder
       accessToken: process.env.WHITE_DENTAL_META_TOKEN || ""

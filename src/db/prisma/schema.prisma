@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -24,13 +24,13 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  // Configuraciones anidadas (JSON stringified)
-  google          String  // { serviceAccountPath, availabilityCalendars, bookingCalendarId }
-  meta            String  // { pixelId, accessToken }
-  wassenger       String  // { apiKey, deviceId }
-  location        String  // { address, mapUrl }
-  locations       String? // Múltiples sedes (opcional)
-  reminderTemplates String  // { "24h", "3h", "1h" }
+  // Configuraciones anidadas (JSON)
+  google          Json  // { serviceAccountPath, availabilityCalendars, bookingCalendarId }
+  meta            Json  // { pixelId, accessToken }
+  wassenger       Json  // { apiKey, deviceId }
+  location        Json  // { address, mapUrl }
+  locations       Json? // Múltiples sedes (opcional)
+  reminderTemplates Json  // { "24h", "3h", "1h" }
   
   // Metadatos
   timezone              String  @default("America/Mexico_City")

@@ -36,7 +36,7 @@ Crear una interfaz administrativa web profesional que centralice la gestión com
 
 - Node.js 20+ / TypeScript
 - Express.js (servidor HTTP existente)
-- Base de datos: **SQLite** (desarrollo/producción ligera) o **PostgreSQL** (producción robusta)
+- Base de datos: **MySQL**
 - ORM: **Prisma** (type-safe, migraciones automáticas)
 - Autenticación: **JWT** + bcrypt
 - Validación: **Zod** o **Joi**

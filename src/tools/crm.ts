@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clients } from '../config/clients';
+import { clientService } from '../services/client.service';
 
 /**
  * Adds labels to a WhatsApp chat via Wassenger.
@@ -9,7 +9,7 @@ import { clients } from '../config/clients';
  */
 export const addLabelToChat = async (args: { client_id: string; phone_number: string; labels: string[] }) => {
   const { client_id, phone_number, labels } = args;
-  const clientConfig = clients[client_id];
+  const clientConfig = await clientService.getClientConfig(client_id);
 
   if (!clientConfig) {
     throw new Error(`Client ${client_id} not found`);
@@ -41,7 +41,7 @@ export const addLabelToChat = async (args: { client_id: string; phone_number: st
  */
 export const updateContactMetadata = async (args: { client_id: string; phone_number: string; metadata: Record<string, string> }) => {
   const { client_id, phone_number, metadata } = args;
-  const clientConfig = clients[client_id];
+  const clientConfig = await clientService.getClientConfig(client_id);
 
   if (!clientConfig) {
     throw new Error(`Client ${client_id} not found`);

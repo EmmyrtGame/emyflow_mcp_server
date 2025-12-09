@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createMcpServer } from './mcp/server';
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { clients } from './config/clients';
+// import { clients } from './config/clients'; // Removed after refactor
 
 dotenv.config();
 

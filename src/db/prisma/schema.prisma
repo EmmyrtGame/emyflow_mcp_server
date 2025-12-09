@@ -41,7 +41,7 @@ model ServiceAccount {
   id          String   @id @default(cuid())
   clientId    String   // FK a Client.id
   fileName    String   // Nombre del archivo (ej: "white_dental_gcal.json")
-  encryptedContent String // Contenido cifrado AES-256
+  encryptedContent String @db.Text // Contenido cifrado AES-256
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   

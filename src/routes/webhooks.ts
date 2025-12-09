@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { clients } from '../config/clients';
+import { clientService } from '../services/client.service';
 import { trackLeadEvent } from '../tools/marketing';
 import { updateContactMetadata } from '../tools/crm';
 
@@ -17,7 +17,7 @@ const BUFFER_DELAY_MS = 15000; // 3 seconds window
 // TODO: Replace with actual Make Agent Webhook URL
 const MAKE_AGENT_WEBHOOK_URL = process.env.MAKE_AGENT_WEBHOOK_URL || 'https://hook.us1.make.com/your-webhook-id';
 
-router.post('/whatsapp', (req, res) => {
+router.post('/whatsapp', async (req, res) => {
   try {
     const { data } = req.body;
     
@@ -37,9 +37,9 @@ router.post('/whatsapp', (req, res) => {
          const deviceId = req.body.device?.id;
          
          if (deviceId) {
-            const clientEntry = Object.entries(clients).find(([_, config]: [string, any]) => config.wassenger.deviceId === deviceId);
-            if (clientEntry) {
-               const [clientId, _] = clientEntry;
+            const clientConfig = await clientService.getClientByDeviceId(deviceId);
+            if (clientConfig) {
+               const clientId = clientConfig.slug;
                console.log(`[Webhook] Detected potential Lead for client ${clientId} (Device: ${deviceId})`);
                
                

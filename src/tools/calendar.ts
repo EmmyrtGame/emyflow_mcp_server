@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { clients } from '../config/clients';
+import { clientService } from '../services/client.service';
 import { z } from 'zod';
 import { scheduleAppointmentReminders } from './wassenger';
 import { trackScheduleEvent } from './marketing';
@@ -57,7 +57,7 @@ const parseInputDate = (dateStr: string, timezone: string): DateTime => {
 
 export const calendarCheckAvailability = async (args: { client_id: string; start_time?: string; end_time?: string; query_date?: string; sede?: string }) => {
   const { client_id, start_time, end_time, query_date, sede } = args;
-  const clientConfig = clients[client_id];
+  const clientConfig = await clientService.getClientConfig(client_id);
 
   if (!clientConfig) {
     throw new Error(`Client ${client_id} not found`);
@@ -216,7 +216,7 @@ export const calendarCreateAppointment = async (args: {
   sede?: string;
 }) => {
   const { client_id, patient_data, start_time, end_time, description, sede } = args;
-  const clientConfig = clients[client_id];
+  const clientConfig = await clientService.getClientConfig(client_id);
 
   if (!clientConfig) {
     throw new Error(`Client ${client_id} not found`);

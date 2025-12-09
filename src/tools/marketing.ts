@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { clients } from '../config/clients';
+import { clientService } from '../services/client.service';
 
 /**
  * Hashes a string using SHA-256.
@@ -69,7 +69,7 @@ export const trackScheduleEvent = async (args: {
 }) => {
   const { client_id, user_data, test_event_code } = args;
   try {
-    const clientConfig = clients[client_id];
+    const clientConfig = await clientService.getClientConfig(client_id);
     if (!clientConfig) {
       console.warn(`[Marketing] Client ${client_id} not found, skipping tracking.`);
       return;
@@ -113,7 +113,7 @@ export const trackLeadEvent = async (args: {
   const { client_id, user_data, test_event_code } = args;
   
   try {
-    const clientConfig = clients[client_id];
+    const clientConfig = await clientService.getClientConfig(client_id);
     if (!clientConfig) {
       console.warn(`[Marketing] Client ${client_id} not found, skipping tracking.`);
       return;

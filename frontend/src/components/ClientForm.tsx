@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { PlusIcon, TrashIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,11 +18,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { clientService } from '@/services/api';
+import { useEffect } from 'react';
 
 interface ClientFormProps {
     initialData?: ClientFormValues;
@@ -42,13 +43,12 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
 
     // Load existing credentials on mount
     useEffect(() => {
-        clientService.getCredentials().then(data => {
+        clientService.getCredentials().then((data: Array<{ name: string, path: string }>) => {
             setExistingCredentials(data);
-            // If we have an existing path in initialData, switch to 'existing' mode automatically?
             if (initialData?.google?.serviceAccountPath) {
                 setCredentialMode('existing');
             }
-        }).catch(err => console.error("Failed to load credentials", err));
+        }).catch((err: any) => console.error("Failed to load credentials", err));
     }, [initialData]);
 
     const { fields, append, remove } = useFieldArray({
@@ -63,8 +63,6 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setServiceAccountFile(e.target.files[0]);
-            // Clear the path field so we know we are using a new file
-            // Actually, we leave it to the parent to update the path after upload
         }
     };
 
@@ -213,7 +211,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                             />
                                             {initialData?.google?.serviceAccountPath && !serviceAccountFile && (
                                                 <span className="text-sm text-green-600 font-medium">
-                                                    ✓ Current: {initialData.google.serviceAccountPath.split('/').pop()}
+                                                    ✓ Configured: {initialData.google.serviceAccountPath.split('/').pop()}
                                                 </span>
                                             )}
                                         </div>
@@ -308,6 +306,8 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                     size="icon"
                                     className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-slate-100"
                                     onClick={() => remove(index)}
+                                // Prevent removing the last item if validation requires min 1? 
+                                // Zod handles submit validation, visual feedback is enough.
                                 >
                                     <TrashIcon className="h-4 w-4" />
                                 </Button>
@@ -395,7 +395,9 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                                             className="min-h-[80px] font-mono text-xs"
                                                             value={Array.isArray(field.value) ? field.value.join('\n') : (field.value || '')}
                                                             onChange={(e) => {
+                                                                // Convert newline/comma text to array of strings
                                                                 const val = e.target.value;
+                                                                // We update the field value as array
                                                                 const arr = val.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
                                                                 field.onChange(arr);
                                                             }}

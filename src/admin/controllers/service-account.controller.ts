@@ -15,7 +15,6 @@ class ServiceAccountController {
       if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
       }
-
       const fileContent = fs.readFileSync(req.file.path, 'utf-8');
       
       // Validation: basic JSON check
@@ -30,7 +29,7 @@ class ServiceAccountController {
       // Encrypt
       const encryptedContent = encrypt(fileContent);
 
-      // Save to DB
+      // Save to DB (Encrypted)
       const serviceAccount = await prisma.serviceAccount.upsert({
         where: {
           clientId_fileName: {
@@ -47,6 +46,14 @@ class ServiceAccountController {
           encryptedContent
         }
       });
+
+      // KEY FIX: Write the PLAIN JSON file to creds/ directory for the app to use
+      const mainCredsDir = 'creds';
+      if (!fs.existsSync(mainCredsDir)){
+          fs.mkdirSync(mainCredsDir);
+      }
+      const finalPath = `${mainCredsDir}/${req.file.originalname}`;
+      fs.writeFileSync(finalPath, fileContent);
 
       // Cleanup temp file
       fs.unlinkSync(req.file.path);

@@ -7,9 +7,7 @@ export const ConfigSchema = z.object({
   timezone: z.string().default('America/Mexico_City'),
   availabilityStrategy: z.enum(['GLOBAL', 'PER_LOCATION']).default('PER_LOCATION'),
   
-  google: z.object({
-    serviceAccountPath: z.string().optional(), // Handled by file upload, but we store path string from DB
-  }),
+  google: z.any(),
   
   meta: z.object({
     pixelId: z.string().regex(/^\d+$/).optional(),
@@ -31,7 +29,7 @@ export const ConfigSchema = z.object({
     })
   })).min(1),
   
-  reminderTemplates: z.record(z.string(), z.string()).optional()
+  reminderTemplates: z.record(z.string(), z.string()).optional().default({})
 });
 
 export type ClientConfigInput = z.infer<typeof ConfigSchema>;

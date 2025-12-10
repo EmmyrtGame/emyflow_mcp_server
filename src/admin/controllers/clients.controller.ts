@@ -184,9 +184,31 @@ class ClientsController {
         data.location = data.locations[0];
       }
 
+      // Retrieve existing client for merging JSON fields
+      const existingClient = await prisma.client.findUnique({ where: { id } });
+      if (!existingClient) {
+        return res.status(404).json({ message: 'Client not found' });
+      }
+
+      // Merge JSON fields manually as Prisma replaces them
+      const updatedData = { ...data };
+      
+      if (data.google) {
+        updatedData.google = { ...(existingClient.google as object || {}), ...data.google };
+      }
+      if (data.meta) {
+        updatedData.meta = { ...(existingClient.meta as object || {}), ...data.meta };
+      }
+      if (data.wassenger) {
+        updatedData.wassenger = { ...(existingClient.wassenger as object || {}), ...data.wassenger };
+      }
+      if (data.reminderTemplates) {
+        updatedData.reminderTemplates = { ...(existingClient.reminderTemplates as object || {}), ...data.reminderTemplates };
+      }
+
       const client = await prisma.client.update({
         where: { id },
-        data: data
+        data: updatedData
       });
 
       res.json(client);

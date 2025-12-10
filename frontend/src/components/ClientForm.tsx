@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { PlusIcon, TrashIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { clientService } from '@/services/api';
 
 interface ClientFormProps {
     initialData?: ClientFormValues;
@@ -28,11 +32,24 @@ interface ClientFormProps {
 
 export function ClientForm({ initialData, onSubmit, isSubmitting = false }: ClientFormProps) {
     const [serviceAccountFile, setServiceAccountFile] = useState<File | null>(null);
+    const [credentialMode, setCredentialMode] = useState<'existing' | 'upload'>('upload');
+    const [existingCredentials, setExistingCredentials] = useState<{ name: string, path: string }[]>([]);
 
     const form = useForm<ClientFormValues>({
         resolver: zodResolver(clientSchema) as any,
         defaultValues: initialData || defaultValues,
     });
+
+    // Load existing credentials on mount
+    useEffect(() => {
+        clientService.getCredentials().then(data => {
+            setExistingCredentials(data);
+            // If we have an existing path in initialData, switch to 'existing' mode automatically?
+            if (initialData?.google?.serviceAccountPath) {
+                setCredentialMode('existing');
+            }
+        }).catch(err => console.error("Failed to load credentials", err));
+    }, [initialData]);
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
@@ -46,6 +63,8 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setServiceAccountFile(e.target.files[0]);
+            // Clear the path field so we know we are using a new file
+            // Actually, we leave it to the parent to update the path after upload
         }
     };
 
@@ -137,25 +156,72 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                     <CardContent className="space-y-6">
 
                         {/* Google Service Account */}
-                        <div className="space-y-2">
-                            <h3 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium leading-none">
                                 Google Service Account
                             </h3>
-                            <div className="bg-slate-50 p-4 rounded-md border">
-                                <div className="flex items-center gap-4">
-                                    <Input
-                                        type="file"
-                                        accept=".json"
-                                        onChange={handleFileChange}
-                                        className="max-w-md bg-white"
+                            <div className="bg-slate-50 p-4 rounded-md border space-y-4">
+                                <RadioGroup
+                                    defaultValue={credentialMode}
+                                    onValueChange={(val) => setCredentialMode(val as any)}
+                                    className="flex flex-row gap-4"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="existing" id="mode-existing" />
+                                        <Label htmlFor="mode-existing" className="font-normal cursor-pointer">Select Existing</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="upload" id="mode-upload" />
+                                        <Label htmlFor="mode-upload" className="font-normal cursor-pointer">Upload New</Label>
+                                    </div>
+                                </RadioGroup>
+
+                                {credentialMode === 'existing' ? (
+                                    <FormField
+                                        control={form.control}
+                                        name="google.serviceAccountPath"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Select Credential File</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select a JSON file" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {existingCredentials.map((cred) => (
+                                                            <SelectItem key={cred.path} value={cred.path}>
+                                                                {cred.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
                                     />
-                                    {initialData?.google?.serviceAccountPath && !serviceAccountFile && (
-                                        <span className="text-sm text-green-600 font-medium">✓ Configured</span>
-                                    )}
-                                </div>
-                                <p className="mt-2 text-[0.8rem] text-muted-foreground">
-                                    Upload the Google Service Account JSON key file. Required for Calendar API access.
-                                </p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <Label>Upload JSON Key</Label>
+                                        <div className="flex items-center gap-4">
+                                            <Input
+                                                type="file"
+                                                accept=".json"
+                                                onChange={handleFileChange}
+                                                className="max-w-md bg-white"
+                                            />
+                                            {initialData?.google?.serviceAccountPath && !serviceAccountFile && (
+                                                <span className="text-sm text-green-600 font-medium">
+                                                    ✓ Current: {initialData.google.serviceAccountPath.split('/').pop()}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-[0.8rem] text-muted-foreground">
+                                            This will upload and encrypt a new service account file.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -242,8 +308,6 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                     size="icon"
                                     className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-slate-100"
                                     onClick={() => remove(index)}
-                                // Prevent removing the last item if validation requires min 1? 
-                                // Zod handles submit validation, visual feedback is enough.
                                 >
                                     <TrashIcon className="h-4 w-4" />
                                 </Button>
@@ -331,9 +395,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                                             className="min-h-[80px] font-mono text-xs"
                                                             value={Array.isArray(field.value) ? field.value.join('\n') : (field.value || '')}
                                                             onChange={(e) => {
-                                                                // Convert newline/comma text to array of strings
                                                                 const val = e.target.value;
-                                                                // We update the field value as array
                                                                 const arr = val.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
                                                                 field.onChange(arr);
                                                             }}

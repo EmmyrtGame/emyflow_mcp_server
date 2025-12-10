@@ -41,23 +41,43 @@ export default function ClientEditor() {
         setIsSubmitting(true);
         try {
             let savedClient;
+
+            // 1. Initial Save (Create or Update)
             if (isEditMode && id) {
                 savedClient = await clientService.update(id, values);
-                toast.success('Client updated successfully');
             } else {
                 savedClient = await clientService.create(values);
-                toast.success('Client created successfully');
             }
 
-            // Handle File Upload if present
+            // 2. Handle File Upload if present (This generates a NEW path)
             if (serviceAccountFile && savedClient?._id) {
                 try {
-                    await clientService.uploadServiceAccount(savedClient._id, serviceAccountFile);
+                    const uploadRes = await clientService.uploadServiceAccount(savedClient._id, serviceAccountFile);
                     toast.success('Service Account uploaded');
+
+                    // 3. CRITICAL: Update the client with the NEW path returned by upload
+                    // The upload controller returns { path: 'creds/file.json', ... }
+                    if (uploadRes.path) {
+                        const updatedGoogleConfig = {
+                            ...values.google,
+                            serviceAccountPath: uploadRes.path
+                        };
+
+                        await clientService.update(savedClient._id, {
+                            ...values,
+                            google: updatedGoogleConfig
+                        });
+                        toast.success('Service Account path saved');
+                    }
+
                 } catch (uploadError) {
                     console.error('File upload failed', uploadError);
                     toast.error('Client saved but Service Account upload failed');
                 }
+            } else if (isEditMode && id) {
+                toast.success('Client updated successfully');
+            } else {
+                toast.success('Client created successfully');
             }
 
             navigate('/clients');

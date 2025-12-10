@@ -45,7 +45,8 @@ export const clientService = {
         'Content-Type': 'multipart/form-data',
       },
     }).then(res => res.data);
-  }
+  },
+  getCredentials: () => api.get('/credentials').then(res => res.data)
 };
 
 export default api;

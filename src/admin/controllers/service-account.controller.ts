@@ -54,6 +54,7 @@ class ServiceAccountController {
       res.status(201).json({
         id: serviceAccount.id,
         fileName: serviceAccount.fileName,
+        path: `creds/${serviceAccount.fileName}`,
         updatedAt: serviceAccount.updatedAt
       });
 

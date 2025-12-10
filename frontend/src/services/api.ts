@@ -32,7 +32,7 @@ api.interceptors.response.use(
 );
 
 export const clientService = {
-  getAll: () => api.get('/clients').then(res => res.data),
+  getAll: (params?: any) => api.get('/clients', { params }).then(res => res.data),
   getOne: (id: string) => api.get(`/clients/${id}`).then(res => res.data),
   create: (data: any) => api.post('/clients', data).then(res => res.data),
   update: (id: string, data: any) => api.put(`/clients/${id}`, data).then(res => res.data),

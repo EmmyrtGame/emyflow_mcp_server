@@ -33,6 +33,9 @@ export default function Layout() {
                     <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                         Dental Admin
                     </h1>
+                    <small>
+                        By EmyWeb Studio
+                    </small>
                 </div>
 
                 <nav className="flex-1 p-4 space-y-2">
@@ -44,8 +47,8 @@ export default function Layout() {
                                 key={item.href}
                                 to={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive
-                                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200'
-                                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200'
+                                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
                                     }`}
                             >
                                 <Icon className="h-5 w-5" />

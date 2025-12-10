@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { useDebounce } from '@/hooks/useDebounce';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
 import {
     Table,
     TableBody,
@@ -14,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { clientService } from '@/services/api';
 
 // Since I didn't install Badge, I'll use a simple span or install it. 
 // Plan said "Button, Input, Card...". I missed Badge.
@@ -33,16 +43,34 @@ export default function ClientList() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [limit] = useState(10);
 
+    const debouncedSearch = useDebounce(search, 500);
+
+    // Reset page when search changes (user types new query)
     useEffect(() => {
-        fetchClients();
-    }, []);
+        setPage(1);
+    }, [debouncedSearch]);
 
-    const fetchClients = async () => {
+    // Fetch when page or debouncedSearch changes
+    useEffect(() => {
+        fetchClients(page, debouncedSearch);
+    }, [page, debouncedSearch]);
+
+    const fetchClients = async (pageNum: number, searchQuery: string) => {
         try {
             setLoading(true);
-            const { data } = await api.get('/clients');
-            setClients(data.data); // Assuming API returns { data: [...] }
+            const response = await clientService.getAll({
+                page: pageNum,
+                limit,
+                search: searchQuery
+            });
+            // data.data and data.meta
+            setClients(response.data);
+            const total = response.meta.total;
+            setTotalPages(Math.ceil(total / limit));
         } catch (error) {
             console.error(error);
         } finally {
@@ -50,10 +78,23 @@ export default function ClientList() {
         }
     };
 
-    const filteredClients = clients.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.slug.toLowerCase().includes(search.toLowerCase())
-    );
+    // Helper to generate page numbers
+    const getPageNumbers = () => {
+        const pages = [];
+        // Simple logic: always show first, last, current, and neighbours
+        if (totalPages <= 5) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            if (page <= 3) {
+                pages.push(1, 2, 3, 4, '...', totalPages);
+            } else if (page >= totalPages - 2) {
+                pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+            } else {
+                pages.push(1, '...', page - 1, page, page + 1, '...', totalPages);
+            }
+        }
+        return pages;
+    };
 
     return (
         <div className="space-y-6">
@@ -99,14 +140,14 @@ export default function ClientList() {
                                         Loading...
                                     </TableCell>
                                 </TableRow>
-                            ) : filteredClients.length === 0 ? (
+                            ) : clients.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center py-10">
                                         No clients found.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredClients.map((client) => (
+                                clients.map((client) => (
                                     <TableRow key={client.id}>
                                         <TableCell className="font-medium">{client.name}</TableCell>
                                         <TableCell className="font-mono text-xs">{client.slug}</TableCell>
@@ -126,6 +167,48 @@ export default function ClientList() {
                         </TableBody>
                     </Table>
                 </CardContent>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="p-4 border-t">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href="#"
+                                        onClick={(e) => { e.preventDefault(); if (page > 1) setPage(page - 1); }}
+                                        aria-disabled={page <= 1}
+                                        className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                                    />
+                                </PaginationItem>
+
+                                {getPageNumbers().map((p, i) => (
+                                    <PaginationItem key={i}>
+                                        {p === '...' ? (
+                                            <PaginationEllipsis />
+                                        ) : (
+                                            <PaginationLink
+                                                href="#"
+                                                isActive={page === p}
+                                                onClick={(e) => { e.preventDefault(); setPage(Number(p)); }}
+                                            >
+                                                {p}
+                                            </PaginationLink>
+                                        )}
+                                    </PaginationItem>
+                                ))}
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href="#"
+                                        onClick={(e) => { e.preventDefault(); if (page < totalPages) setPage(page + 1); }}
+                                        aria-disabled={page >= totalPages}
+                                        className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
             </Card>
         </div>
     );

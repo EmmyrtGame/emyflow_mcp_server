@@ -33,9 +33,8 @@ export default function Layout() {
                     <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                         Dental Admin
                     </h1>
-                    <small>
-                        By EmyWeb Studio
-                    </small>
+                    <small>By EmyWeb Studio</small>
+                    <img src="../public/emyweblogo.png" alt="emyweblogo" className="mt-2 h-10" />
                 </div>
 
                 <nav className="flex-1 p-4 space-y-2">

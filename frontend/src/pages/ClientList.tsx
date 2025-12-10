@@ -97,7 +97,7 @@ export default function ClientList() {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
-                    <p className="text-gray-500 text-sm mt-1">Manage your dental clinic tenants</p>
+                    <p className="text-gray-500 text-sm mt-1">Manage your multi-tenant clients</p>
                 </div>
                 <Button onClick={() => navigate('/clients/new')}>
                     <Plus className="mr-2 h-4 w-4" />

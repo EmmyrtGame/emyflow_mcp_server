@@ -100,7 +100,7 @@ export default function ClientEditor() {
                     {isEditMode ? 'Edit Client' : 'New Client'}
                 </h1>
                 <p className="text-muted-foreground">
-                    {isEditMode ? 'Update client configuration and settings.' : 'Onboard a new dental clinic.'}
+                    {isEditMode ? 'Update client configuration and settings.' : 'Onboard a new business client.'}
                 </p>
             </div>
 

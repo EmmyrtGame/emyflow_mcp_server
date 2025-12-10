@@ -44,7 +44,27 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/admin', express.json(), adminRoutes);
+app.use('/api/admin', express.json(), adminRoutes);
 app.use('/webhooks', express.json(), webhookRoutes);
+
+// --- Serve Frontend in Production ---
+import path from 'path';
+import fs from 'fs';
+
+const frontendDist = path.join(__dirname, '../frontend/dist');
+// In ts-node (src), __dirname is src/
+// In build (dist), __dirname is dist/
+// Standard Build struct: root/dist/index.js AND root/frontend/dist
+
+// Let's assume standard structure relative to process.cwd() or safer checks.
+// Actually, 'express.static' is robust.
+// If running from root: 'frontend/dist'
+app.use(express.static('frontend/dist'));
+
+// For SPA routing, send index.html for unknown non-API routes
+// Place this AFTER API routes
+// app.get('*', ...) logic is below
+
 
 // --- MCP SSE Transport Setup ---
 // Store active transports by sessionId
@@ -125,6 +145,21 @@ app.post('/messages', async (req, res) => {
     res.status(500).send(error.message);
   }
 });
+// -------------------------------
+
+// Serve React App for any other route (SPA support)
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/sse') || req.path.startsWith('/webhooks')) {
+      return res.status(404).send('Not Found');
+  }
+  const indexHtml = path.join(frontendDist, 'index.html');
+  if (fs.existsSync(indexHtml)) {
+      res.sendFile(indexHtml);
+  } else {
+      res.send('EmyFlow API Running. (Frontend build not found in dist)');
+  }
+});
+
 // -------------------------------
 
 const startServer = async () => {

@@ -12,7 +12,7 @@ import {
 export const createMcpServer = () => {
   // Create a new MCP server instance
   const server = new Server({
-    name: "DentalClinicMCP",
+    name: "EmyFlowMCP",
     version: "1.0.0"
   }, {
     capabilities: {

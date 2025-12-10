@@ -1,12 +1,14 @@
 {
-    "name": "mpc-emyweb-dental",
+    "name": "emyflow-mcp",
     "version": "1.0.0",
-    "description": "MCP Server for Dental Clinics",
+    "description": "AI-Powered MCP Server for Business Automation",
     "main": "dist/index.js",
     "scripts": {
-        "build": "tsc",
+        "build": "npm install && tsc && cd frontend && npm install && npm run build",
         "start": "node dist/index.js",
-        "dev": "nodemon src/index.ts",
+        "dev": "concurrently \"npm run dev:server\" \"npm run dev:frontend\"",
+        "dev:server": "nodemon src/index.ts",
+        "dev:frontend": "cd frontend && npm run dev",
         "postinstall": "npm run build"
     },
     "keywords": [],
@@ -38,6 +40,7 @@
         "@types/cors": "^2.8.17",
         "@types/express": "^4.17.21",
         "@types/node": "^20.10.0",
+        "concurrently": "^9.2.1",
         "nodemon": "^3.0.1",
         "ts-node": "^10.9.1",
         "typescript": "^5.3.2"

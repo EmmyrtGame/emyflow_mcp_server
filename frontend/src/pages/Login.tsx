@@ -53,7 +53,7 @@ export default function Login() {
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
                     <img src="/emyweblogo.png" alt="emyweb logo" className="h-10 w-auto mx-auto" />
-                    <CardTitle className="text-2xl font-bold text-center">Admin Access</CardTitle>
+                    <CardTitle className="text-2xl font-bold text-center">EmyFlow Admin</CardTitle>
                     <CardDescription className="text-center">
                         Enter your credentials to access the dashboard
                     </CardDescription>

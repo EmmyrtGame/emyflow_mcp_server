@@ -31,9 +31,9 @@ export default function Layout() {
             <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        Dental Admin
+                        EmyFlow Admin
                     </h1>
-                    <small>By EmyWeb Studio</small>
+                    <small>Developed by EmyWeb Studio</small>
                     <img src="/emyweblogo.png" alt="emyweblogo" className="mt-2 h-10" />
                 </div>
 

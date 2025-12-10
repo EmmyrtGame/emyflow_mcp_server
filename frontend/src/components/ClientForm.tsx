@@ -171,7 +171,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                         <FormControl>
                                             <div className="relative">
                                                 <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <Input className="pl-9" placeholder="Dental Clinic Name" {...field} />
+                                                <Input className="pl-9" placeholder="Business Name" {...field} />
                                             </div>
                                         </FormControl>
                                         <FormMessage />

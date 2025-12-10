@@ -118,9 +118,23 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
     };
 
     const handlePreSubmit = (values: ClientFormValues) => {
-        const changes = getChanges(values);
+        // Transform availabilityCalendars to array of strings for consistency
+        const transformedValues: ClientFormValues = {
+            ...values,
+            locations: values.locations.map(loc => ({
+                ...loc,
+                google: {
+                    ...loc.google,
+                    availabilityCalendars: Array.isArray(loc.google.availabilityCalendars)
+                        ? loc.google.availabilityCalendars
+                        : (loc.google.availabilityCalendars as string).split(/[\n,]/).map(s => s.trim()).filter(Boolean)
+                }
+            }))
+        };
+
+        const changes = getChanges(transformedValues);
         setChangesList(changes);
-        setPendingValues(values);
+        setPendingValues(transformedValues);
         setShowConfirm(true);
     };
 
@@ -508,18 +522,16 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                                             <Textarea
                                                                 placeholder="id1@group.calendar.google.com, id2@..."
                                                                 className="min-h-[80px] font-mono text-xs"
+                                                                // Handle both array (initial/saved) and string (editing)
                                                                 value={Array.isArray(field.value) ? field.value.join('\n') : (field.value || '')}
                                                                 onChange={(e) => {
-                                                                    // Convert newline/comma text to array of strings
-                                                                    const val = e.target.value;
-                                                                    // We update the field value as array
-                                                                    const arr = val.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
-                                                                    field.onChange(arr);
+                                                                    // Let user type freely. Validation/Transformation happens on submit.
+                                                                    field.onChange(e.target.value);
                                                                 }}
                                                             />
                                                         </FormControl>
                                                         <FormDescription className="text-xs">
-                                                            One ID per line. Checked for conflicts.
+                                                            One ID per line or comma separated.
                                                         </FormDescription>
                                                         <FormMessage />
                                                     </FormItem>

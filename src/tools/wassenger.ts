@@ -85,12 +85,15 @@ export const scheduleAppointmentReminders = async (
         .replace(/{{patient_name}}/g, patientName)
         .replace(/{{time}}/g, timeFormatted)
         .replace(/{{day_of_week}}/g, dayOfWeekCapitalized)
-        .replace(/{{day_num}}/g, dayNum);
+        .replace(/{{day_num}}/g, dayNum)
+        .replace(/{{date}}/g, dayNum); // {{date}} maps to same as day_num ("12 de diciembre") or we could use full date
 
       if (activeLocation) {
         message = message
+            .replace(/{{location_name}}/g, clientConfig.name) // Updated to use Brand Name per user request
             .replace(/{{location_address}}/g, activeLocation.address)
             .replace(/{{location_map_url}}/g, activeLocation.mapUrl)
+            .replace(/{{location_map}}/g, activeLocation.mapUrl) // Alias for user convenience
             .replace(/{{location_phone}}/g, activeLocation.phone || '');
       }
 

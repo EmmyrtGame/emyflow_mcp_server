@@ -587,7 +587,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                     <strong>{"{{patient_name}}"}</strong>: Name of the patient<br />
                                     <strong>{"{{time}}"}</strong>: Appointment time (e.g., 10:30 AM)<br />
                                     <strong>{"{{date}}"}</strong>: Appointment date (e.g., Nov 25)<br />
-                                    <strong>{"{{location_name}}"}</strong>: Name/Sede of the location<br />
+                                    <strong>{"{{location_name}}"}</strong>: Name of the Consultory/Office (Brand)<br />
                                     <strong>{"{{location_address}}"}</strong>: Address of the location<br />
                                     <strong>{"{{location_map}}"}</strong>: Google Maps URL<br />
                                     <strong>{"{{location_phone}}"}</strong>: Location Phone Number

@@ -10,58 +10,68 @@ class ServiceAccountController {
   // POST /api/admin/clients/:id/service-account
   async uploadServiceAccount(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { id } = req.params; // Client ID
       
       if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
       }
       const fileContent = fs.readFileSync(req.file.path, 'utf-8');
       
-      // Validation: basic JSON check
+      // Validation & Extraction
+      let parsedCreds;
       try {
-        JSON.parse(fileContent);
+        parsedCreds = JSON.parse(fileContent);
+        if (!parsedCreds.client_email) {
+           throw new Error('Invalid Service Account JSON: missing client_email');
+        }
       } catch (e) {
-        // Cleanup
-        fs.unlinkSync(req.file.path);
-        return res.status(400).json({ message: 'Invalid JSON file' });
+        // Cleanup temp upload
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(400).json({ message: 'Invalid JSON file or missing client_email' });
       }
 
       // Encrypt
       const encryptedContent = encrypt(fileContent);
 
-      // Save to DB (Encrypted)
+      // Save to Global ServiceAccount Table
+      // Use client_email as unique identifier for the service account, or project_id if email absent (but email checked above)
+      // Name = client_email to ensure uniqueness roughly mapping to the SA itself
+      const saName = parsedCreds.client_email;
+
       const serviceAccount = await prisma.serviceAccount.upsert({
-        where: {
-          clientId_fileName: {
-            clientId: id,
-            fileName: req.file.originalname
-          }
-        },
+        where: { name: saName },
         update: {
-          encryptedContent
+          encryptedContent,
+          fileName: req.file.originalname,
+          email: parsedCreds.client_email
         },
         create: {
-          clientId: id,
+          name: saName,
+          email: parsedCreds.client_email,
           fileName: req.file.originalname,
           encryptedContent
         }
       });
 
-      // KEY FIX: Write the PLAIN JSON file to creds/ directory for the app to use
-      const mainCredsDir = 'creds';
-      if (!fs.existsSync(mainCredsDir)){
-          fs.mkdirSync(mainCredsDir);
-      }
-      const finalPath = `${mainCredsDir}/${req.file.originalname}`;
-      fs.writeFileSync(finalPath, fileContent);
+      // Link to Client
+      await prisma.client.update({
+        where: { id },
+        data: {
+            serviceAccountId: serviceAccount.id
+        }
+      });
 
-      // Cleanup temp file
-      fs.unlinkSync(req.file.path);
+      // Cleanup temp upload file
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+      // Return response formatted for Frontend "path" input
+      // We return a virtual path like "db://email" or similar so the user sees something.
+      const virtualPath = `db://${serviceAccount.email}`;
 
       res.status(201).json({
         id: serviceAccount.id,
         fileName: serviceAccount.fileName,
-        path: `creds/${serviceAccount.fileName}`,
+        path: virtualPath, 
         updatedAt: serviceAccount.updatedAt
       });
 

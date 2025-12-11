@@ -94,10 +94,12 @@ class ClientsController {
       // If I encrypt them on save, I decrypt them here.
       
       const clientData = client as any;
+      
       // Example decryption if we implement it on save:
       // if (clientData.meta?.accessToken) clientData.meta.accessToken = decrypt(clientData.meta.accessToken);
+      // if (clientData.meta?.accessToken) clientData.meta.accessToken = decrypt(clientData.meta.accessToken);
       // if (clientData.wassenger?.apiKey) clientData.wassenger.apiKey = decrypt(clientData.wassenger.apiKey);
-
+ 
       res.json(clientData);
     } catch (error) {
       res.status(500).json({ message: 'Error fetching client' });
@@ -127,6 +129,9 @@ class ClientsController {
       // Cast to any to allow modification if types are strict
       const dataToSave = { ...data } as any;
       
+      // Remove google field as it is no longer in DB schema
+      delete dataToSave.google;
+
       if (dataToSave.meta?.accessToken) {
         dataToSave.meta.accessToken = encrypt(dataToSave.meta.accessToken);
       }
@@ -185,9 +190,9 @@ class ClientsController {
       // Merge JSON fields manually as Prisma replaces them
       const updatedData = { ...data };
       
-      if (data.google) {
-        updatedData.google = { ...(existingClient.google as object || {}), ...data.google };
-      }
+      // Google field removed from schema
+      delete updatedData.google;
+
       if (data.meta) {
         updatedData.meta = { ...(existingClient.meta as object || {}), ...data.meta };
       }
@@ -202,7 +207,7 @@ class ClientsController {
         where: { id },
         data: updatedData
       });
-
+      
       res.json(client);
 
     } catch (error) {

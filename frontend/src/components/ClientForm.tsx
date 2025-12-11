@@ -60,6 +60,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
             ...initialData.meta,
             accessToken: ''
         },
+        google: initialData.google || defaultValues.google,
         wassenger: {
             ...initialData.wassenger,
             apiKey: ''
@@ -73,13 +74,32 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
 
     // Load existing credentials on mount
     useEffect(() => {
-        clientService.getCredentials().then((data: Array<{ name: string, path: string }>) => {
+        clientService.getCredentials().then((data: Array<{ id: string, name: string, path: string }>) => {
             setExistingCredentials(data);
-            if (initialData?.google?.serviceAccountPath) {
+
+            // Check if client has a linked service account ID (from backend relation)
+            const serviceAccountId = (initialData as any)?.serviceAccountId;
+
+            if (serviceAccountId) {
+                const matched = data.find(c => c.id === serviceAccountId);
+                if (matched) {
+                    setCredentialMode('existing');
+                    const currentValues = form.getValues();
+                    // Reset form to make this the "clean" initial state
+                    form.reset({
+                        ...currentValues,
+                        google: {
+                            ...currentValues.google,
+                            serviceAccountPath: matched.path
+                        }
+                    });
+                }
+            } else if (initialData?.google?.serviceAccountPath) {
+                // Fallback (legacy)
                 setCredentialMode('existing');
             }
         }).catch((err: any) => console.error("Failed to load credentials", err));
-    }, [initialData]);
+    }, [initialData, form]);
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
@@ -167,7 +187,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Client Name</FormLabel>
+                                        <FormLabel>Brand Name</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -189,7 +209,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                             <FormControl>
                                                 <div className="relative">
                                                     <Hash className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                    <Input className="pl-9" placeholder="clinic_name" {...field} />
+                                                    <Input className="pl-9" /* Placeholder checks logic_name */ {...field} />
                                                 </div>
                                             </FormControl>
                                             <FormDescription>Unique identifier for URLs and database.</FormDescription>
@@ -556,19 +576,28 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                 type="button"
                                 variant="outline"
                                 className="w-full border-dashed py-6"
-                                onClick={() => append({
-                                    name: '',
-                                    address: '',
-                                    mapUrl: '',
-                                    google: { bookingCalendarId: '', availabilityCalendars: [] }
-                                })}
+                                onClick={() => {
+                                    append({
+                                        name: '',
+                                        address: '',
+                                        mapUrl: '',
+                                        google: { bookingCalendarId: '', availabilityCalendars: [] }
+                                    });
+                                    form.clearErrors("locations");
+                                }}
                             >
                                 <PlusIcon className="mr-2 h-4 w-4" /> Add Location (Sede)
                             </Button>
+                            {/* Global Location Error (e.g. min 1) */}
                             {form.formState.errors.locations && (
-                                <p className="text-sm font-medium text-destructive">
-                                    {form.formState.errors.locations.message}
-                                </p>
+                                ((form.formState.errors.locations as any)?.message || (form.formState.errors.locations as any)?.root?.message) && (
+                                    <Alert variant="destructive">
+                                        <AlertDescription>
+                                            {(form.formState.errors.locations as any)?.message ||
+                                                (form.formState.errors.locations as any)?.root?.message}
+                                        </AlertDescription>
+                                    </Alert>
+                                )
                             )}
                         </CardContent>
                     </Card>
@@ -642,7 +671,7 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                         <Button type="button" variant="outline" onClick={() => window.history.back()}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button type="submit" disabled={isSubmitting || (!form.formState.isDirty && !serviceAccountFile)}>
                             {isSubmitting ? 'Saving...' : 'Save Client Configuration'}
                         </Button>
                     </div>

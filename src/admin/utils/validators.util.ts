@@ -6,8 +6,6 @@ export const ConfigSchema = z.object({
   isActive: z.boolean().default(true),
   timezone: z.string().default('America/Mexico_City'),
   
-  google: z.any(),
-  
   meta: z.object({
     pixelId: z.string().regex(/^\d+$/).optional(),
     accessToken: z.string().optional()

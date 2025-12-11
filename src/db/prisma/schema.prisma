@@ -25,24 +25,28 @@ model Client {
   updatedAt DateTime @updatedAt
   
   // Configuraciones anidadas (JSON)
-  google          Json  // { serviceAccountPath, availabilityCalendars, bookingCalendarId }
   meta            Json  // { pixelId, accessToken }
   wassenger       Json  // { apiKey, deviceId }
   // Removed legacy location and availabilityStrategy fields
   locations       Json? // Múltiples sedes (opcional)
   reminderTemplates Json  // { "24h", "3h", "1h" }
   
+  // Relations
+  serviceAccountId String?
+  serviceAccount   ServiceAccount? @relation(fields: [serviceAccountId], references: [id])
+
   // Metadatos
   timezone              String  @default("America/Mexico_City")
 }
 
 model ServiceAccount {
   id          String   @id @default(cuid())
-  clientId    String   // FK a Client.id
-  fileName    String   // Nombre del archivo (ej: "white_dental_gcal.json")
-  encryptedContent String @db.Text // Contenido cifrado AES-256
+  name        String   @unique // Identifier (e.g., project_id or filename)
+  email       String?  // client_email derived from JSON
+  fileName    String?  // Original filename for display
+  encryptedContent String @db.Text // JSON content usually
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  @@unique([clientId, fileName])
+  clients     Client[]
 }

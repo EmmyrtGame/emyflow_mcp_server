@@ -15,6 +15,7 @@ export interface DecryptedClientConfig {
   
   google: {
     serviceAccountPath?: string;
+    credentials?: any; // Encrypted JSON content from DB
     // Removed global calendars as per refactor
   };
   meta: {
@@ -45,7 +46,7 @@ class ClientService {
   // Note: If configs change in DB, this cache needs invalidation. For v1, restarts or manual invalidation is assumed.
 
   async getClientConfig(slug: string): Promise<DecryptedClientConfig | null> {
-    // Check cache first (optional, but good for performance)
+    // Check cache first
     if (this.configCache.has(slug)) {
       return this.configCache.get(slug)!;
     }
@@ -62,7 +63,7 @@ class ClientService {
       try {
         meta.accessToken = decrypt(meta.accessToken);
       } catch (e) {
-        console.warn(`Failed to decrypt meta token for client ${slug}, assuming plain text or invalid.`);
+        console.warn(`Failed to decrypt meta token for client ${slug}, assuming plain text.`);
       }
     }
 
@@ -71,48 +72,36 @@ class ClientService {
       try {
         wassenger.apiKey = decrypt(wassenger.apiKey);
       } catch (e) {
-        console.warn(`Failed to decrypt wassenger key for client ${slug}, assuming plain text or invalid.`);
+        // console.warn(`Failed to decrypt wassenger key...`);
       }
     }
 
-    // Handle Service Account
-    // We need to fetch the file content from ServiceAccount table
-    const serviceAccountFile = await prisma.serviceAccount.findFirst({
-      where: { clientId: client.id } // Assuming one per client for now or picking the first
-    });
+    // Handle Service Account (DB First)
+    let credentials = null;
 
-    let serviceAccountPath = '';
-    
-    if (serviceAccountFile) {
-      try {
-        const decryptedContent = decrypt(serviceAccountFile.encryptedContent);
-        // Write to temp file
-        const tempDir = os.tmpdir();
-        const tempFilePath = path.join(tempDir, `mcp_auth_${slug}_${serviceAccountFile.fileName}`);
-        fs.writeFileSync(tempFilePath, decryptedContent);
-        serviceAccountPath = tempFilePath;
-      } catch (e) {
-        console.error(`Failed to decrypt/write service account for client ${slug}`, e);
-        // Fallback or error?
-      }
-    } else {
-       // Fallback to what's in JSON if it exists and looks like a path (legacy migration case)
-       // But we want to enforce DB usage. 
-       const googleConfig = client.google as any;
-       if (googleConfig.serviceAccountPath && fs.existsSync(googleConfig.serviceAccountPath)) {
-          serviceAccountPath = googleConfig.serviceAccountPath;
+    if (client.serviceAccountId) {
+       const sa = await prisma.serviceAccount.findUnique({ where: { id: client.serviceAccountId } });
+       if (sa) {
+          try {
+             const decryptedJson = decrypt(sa.encryptedContent);
+             credentials = JSON.parse(decryptedJson);
+          } catch (e) {
+             console.error(`Failed to decrypt Service Account ${sa.id} for client ${slug}`, e);
+          }
        }
     }
 
 
+    // Construct Google Config strictly from DB Relations (ServiceAccount)
+    // The 'google' column has been removed from DB.
+    
     const config: DecryptedClientConfig = {
       slug: client.slug,
       name: client.name,
       isActive: client.isActive,
       timezone: client.timezone,
       google: {
-        ...(client.google as any),
-        serviceAccountPath: serviceAccountPath
+        credentials: credentials
       },
       meta: meta,
       wassenger: {

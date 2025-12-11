@@ -85,10 +85,20 @@ export const calendarCheckAvailability = async (args: { client_id: string; start
       }
   }
 
-  const auth = new google.auth.GoogleAuth({
-    keyFile: clientConfig.google.serviceAccountPath,
+  /* AUTH CONFIGURATION */
+  const authConfig: any = {
     scopes: ['https://www.googleapis.com/auth/calendar'],
-  });
+  };
+
+  if (clientConfig.google.credentials) {
+    authConfig.credentials = clientConfig.google.credentials;
+  } else {
+    // Legacy fallback removed.
+    // authConfig.keyFile = clientConfig.google.serviceAccountPath;
+    console.warn(`Client ${client_id} missing Google Service Account Credentials in DB`);
+  }
+
+  const auth = new google.auth.GoogleAuth(authConfig);
 
   const calendar = google.calendar({ version: 'v3', auth });
 
@@ -254,10 +264,20 @@ export const calendarCreateAppointment = async (args: {
       }
   }
 
-  const auth = new google.auth.GoogleAuth({
-    keyFile: clientConfig.google.serviceAccountPath,
+  /* AUTH CONFIGURATION */
+  const authConfig: any = {
     scopes: ['https://www.googleapis.com/auth/calendar'],
-  });
+  };
+
+  if (clientConfig.google.credentials) {
+    authConfig.credentials = clientConfig.google.credentials;
+  } else {
+    // Legacy fallback removed.
+    // authConfig.keyFile = clientConfig.google.serviceAccountPath;
+    console.warn(`Client ${client_id} missing Google Service Account Credentials in DB`);
+  }
+
+  const auth = new google.auth.GoogleAuth(authConfig);
 
   const calendar = google.calendar({ version: 'v3', auth });
 

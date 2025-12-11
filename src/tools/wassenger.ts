@@ -90,7 +90,8 @@ export const scheduleAppointmentReminders = async (
       if (activeLocation) {
         message = message
             .replace(/{{location_address}}/g, activeLocation.address)
-            .replace(/{{location_map_url}}/g, activeLocation.mapUrl);
+            .replace(/{{location_map_url}}/g, activeLocation.mapUrl)
+            .replace(/{{location_phone}}/g, activeLocation.phone || '');
       }
 
       // Fallback for old templates if any exist or if user reverts

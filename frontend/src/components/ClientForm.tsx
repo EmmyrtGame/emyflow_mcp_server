@@ -481,6 +481,22 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                                 </FormItem>
                                             )}
                                         />
+                                        <FormField
+                                            control={form.control}
+                                            name={`locations.${index}.phone`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Location Phone</FormLabel>
+                                                    <FormControl>
+                                                        <div className="relative">
+                                                            <Smartphone className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                            <Input className="pl-9" placeholder="312 128..." {...field} />
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
                                     </div>
 
                                     <Separator className="my-2 bg-slate-200" />
@@ -573,7 +589,8 @@ export function ClientForm({ initialData, onSubmit, isSubmitting = false }: Clie
                                     <strong>{"{{date}}"}</strong>: Appointment date (e.g., Nov 25)<br />
                                     <strong>{"{{location_name}}"}</strong>: Name/Sede of the location<br />
                                     <strong>{"{{location_address}}"}</strong>: Address of the location<br />
-                                    <strong>{"{{location_map}}"}</strong>: Google Maps URL
+                                    <strong>{"{{location_map}}"}</strong>: Google Maps URL<br />
+                                    <strong>{"{{location_phone}}"}</strong>: Location Phone Number
                                 </AlertDescription>
                             </Alert>
 

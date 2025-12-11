@@ -23,6 +23,7 @@ export const clientSchema = z.object({
   locations: z.array(z.object({
     name: z.string().min(2, 'Name must be at least 2 chars (e.g. "center_1")'),
     address: z.string().min(1, 'Address is required'),
+    phone: z.string().optional(),
     mapUrl: z.string().url('Must be a valid URL'),
     google: z.object({
         bookingCalendarId: z.string().min(1, 'Booking Calendar ID is required'),

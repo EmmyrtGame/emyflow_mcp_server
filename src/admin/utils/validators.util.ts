@@ -21,6 +21,7 @@ export const ConfigSchema = z.object({
   locations: z.array(z.object({
     name: z.string(), // Acts as 'sede' identifier
     address: z.string(),
+    phone: z.string().optional(),
     mapUrl: z.string(),
     google: z.object({
       bookingCalendarId: z.string(),

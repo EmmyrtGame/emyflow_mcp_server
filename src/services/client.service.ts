@@ -33,6 +33,7 @@ export interface DecryptedClientConfig {
       availabilityCalendars: string[];
       bookingCalendarId: string;
     };
+    phone?: string;
   }>;
   reminderTemplates: Record<string, string>;
 }
@@ -122,7 +123,8 @@ class ClientService {
         name: loc.name,
         address: loc.address,
         mapUrl: loc.mapUrl,
-        google: loc.google
+        google: loc.google,
+        phone: (loc as any).phone
       })) : [],
       reminderTemplates: client.reminderTemplates as any
     };

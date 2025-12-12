@@ -12,23 +12,76 @@ const router = express.Router();
  */
 const messageBuffer: Record<string, { messages: string[], timer: NodeJS.Timeout }> = {};
 
-const BUFFER_DELAY_MS = 15000; // 3 seconds window
+/**
+ * In-memory state for human handoff suppression.
+ * maps userId (JID) -> timestamp (Date.now()) of last human interaction.
+ */
+const humanHandoffState: Record<string, number> = {};
+const HUMAN_HANDOFF_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+const BUFFER_DELAY_MS = 15000; // 15 seconds window (from original code, comment said 3s but value 15000)
 
 // TODO: Replace with actual Make Agent Webhook URL
 const MAKE_AGENT_WEBHOOK_URL = process.env.MAKE_AGENT_WEBHOOK_URL || 'https://hook.us1.make.com/your-webhook-id';
 
 router.post('/whatsapp', async (req, res) => {
   try {
-    const { data } = req.body;
+    const { data, event } = req.body;
     
+    // ---------------------------------------------------------
+    // 1. OUTBOUND MESSAGE HANDLER (Detect Human Intervention)
+    // ---------------------------------------------------------
+    if (event === 'message:out:new') {
+        // According to user docs:
+        // - Human message: has 'agent' field (e.g. "agent": "68f...")
+        // - API message: 'agent' is null/undefined
+        if (data && data.agent) {
+             // Use 'to' (JID) as the key, consistent with Wassenger unique identifiers
+             const targetId = data.to; 
+             if (targetId) {
+                humanHandoffState[targetId] = Date.now();
+                console.log(`[Handoff] Human agent detected for ${targetId}. AI paused for 30m.`);
+             }
+        } else {
+             // API message, ignored
+        }
+        
+        return res.status(200).send('OK');
+    }
+
     if (!data || !data.fromNumber || !data.body) {
        console.log('Webhook received but missing data:', req.body);
        return res.status(200).send('OK');
     }
 
-    const userId = data.fromNumber;
-    const messageBody = data.body;
+    const userId = data.fromNumber; // Used for buffer key in original code
+    const userJid = data.from; // JID (e.g. number@c.us) used for handoff lock
+
+    // ---------------------------------------------------------
+    // 2. CHECK HANDOFF STATE
+    // ---------------------------------------------------------
+    if (userJid && humanHandoffState[userJid]) {
+        const lastHumanTime = humanHandoffState[userJid];
+        const timeElapsed = Date.now() - lastHumanTime;
+        
+        if (timeElapsed < HUMAN_HANDOFF_TIMEOUT_MS) {
+            console.log(`[Handoff] AI suppressed for ${userJid}. Time remaining: ${Math.ceil((HUMAN_HANDOFF_TIMEOUT_MS - timeElapsed)/60000)}m`);
+            return res.status(200).send('Suppressed by Human Handoff');
+        } else {
+            // Expired
+            delete humanHandoffState[userJid];
+            console.log(`[Handoff] Timer expired for ${userJid}. Resuming AI.`);
+        }
+    } else if (userId && humanHandoffState[userId]) {
+         // Fallback check: if state was saved with fromNumber for some reason, or to cover bases
+         // But we save with data.to (JID) on outbound.
+         // data.from is the JID on inbound. So the above check 'userJid' should suffice.
+         // Just in case, let's just stick to JID.
+    }
     
+    // ---------------------------------------------------------
+    // 3. LEAD TRACKING (Original Logic)
+    // ---------------------------------------------------------
     if (data.flow === 'inbound' && data.meta && data.meta.isFirstMessage === false) {
        const contactMetadata = data.chat?.contact?.metadata || [];
        const isLeadSent = contactMetadata.some((m: any) => m.key === 'capi_lead_enviado' && m.value === 'true');
@@ -64,13 +117,18 @@ router.post('/whatsapp', async (req, res) => {
        }
     }
 
+    // ---------------------------------------------------------
+    // 4. MESSAGE BUFFERING (Original Logic)
+    // ---------------------------------------------------------
+    const messageBody = data.body;
+
     if (messageBuffer[userId]) {
       clearTimeout(messageBuffer[userId].timer);
       messageBuffer[userId].messages.push(messageBody);
     } else {
       messageBuffer[userId] = {
         messages: [messageBody],
-        timer: setTimeout(() => {}, 0)
+        timer: setTimeout(() => {}, 0) // placeholder
       };
     }
 

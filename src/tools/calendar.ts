@@ -3,6 +3,7 @@ import { clientService } from '../services/client.service';
 import { z } from 'zod';
 import { scheduleAppointmentReminders } from './wassenger';
 import { trackScheduleEvent } from './marketing';
+import { addLabelToChat } from './crm';
 import { DateTime } from 'luxon';
 
 /**
@@ -327,6 +328,13 @@ export const calendarCreateAppointment = async (args: {
       user_data: {
         phone: patient_data.telefono
       }
+    });
+
+    // Add tags to user in CRM
+    await addLabelToChat({
+      client_id,
+      phone_number: patient_data.telefono,
+      labels: ["humano", "cita agendada"]
     });
 
     return { content: [{ type: "text", text: JSON.stringify({ success: true, eventId: response.data.id }) }] };

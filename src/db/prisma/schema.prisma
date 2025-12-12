@@ -37,6 +37,7 @@ model Client {
 
   // Metadatos
   timezone              String  @default("America/Mexico_City")
+  wassengerDeviceId     String? @unique
 }
 
 model ServiceAccount {

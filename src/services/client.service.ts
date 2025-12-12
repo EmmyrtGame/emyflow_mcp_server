@@ -119,18 +119,18 @@ class ClientService {
   }
 
   async getClientByDeviceId(deviceId: string): Promise<DecryptedClientConfig | null> {
-    // List all active clients and find match
-    const clients = await prisma.client.findMany({
-      where: { isActive: true }
+    // Optimized O(1) lookup using the unique wassengerDeviceId column
+    const client = await prisma.client.findUnique({
+      where: { 
+        wassengerDeviceId: deviceId
+      }
     });
 
-    for (const client of clients) {
-      const wassenger = client.wassenger as any;
-      if (wassenger && wassenger.deviceId === deviceId) {
+    if (client && client.isActive) {
         // reuse getClientConfig to handle decryption/cache
         return this.getClientConfig(client.slug);
-      }
     }
+    
     return null;
   }
 }

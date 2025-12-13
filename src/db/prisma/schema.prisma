@@ -21,6 +21,7 @@ model Client {
   slug      String   @unique  // Ej: "white_dental"
   name      String              // Nombre visible
   isActive  Boolean  @default(true)
+  webhookUrl String?  // Custom webhook URL for this client
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   

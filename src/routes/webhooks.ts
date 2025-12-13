@@ -21,8 +21,7 @@ const HUMAN_HANDOFF_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 const BUFFER_DELAY_MS = 15000; // 15 seconds window (from original code, comment said 3s but value 15000)
 
-// TODO: Replace with actual Make Agent Webhook URL
-const MAKE_AGENT_WEBHOOK_URL = process.env.MAKE_AGENT_WEBHOOK_URL || 'https://hook.us1.make.com/your-webhook-id';
+// Custom Webhook URL is now fetched dynamically from Client config
 
 router.post('/whatsapp', async (req, res) => {
   try {
@@ -139,8 +138,18 @@ router.post('/whatsapp', async (req, res) => {
       console.log(`Processing buffered message for ${userId}: ${combinedMessage}`);
 
       try {
-        // Send to Make Agent
-        await axios.post(MAKE_AGENT_WEBHOOK_URL, {
+        // Logic change: Use client-specific webhook URL
+        const deviceId = req.body.device?.id;
+        const clientConfig = await clientService.getClientByDeviceId(deviceId);
+        const webhookUrl = clientConfig?.webhookUrl;
+
+        if (!webhookUrl) {
+           console.warn(`[Webhook] No webhook URL configured for client (Device: ${deviceId}). Skipping.`);
+           return; 
+        }
+
+        // Send to Client Webhook
+        await axios.post(webhookUrl, {
           ...req.body, // Pass original context
           data: {
             ...data,

@@ -11,6 +11,7 @@ export interface DecryptedClientConfig {
   slug: string;
   name: string;
   isActive: boolean;
+  webhookUrl?: string;
   timezone: string;
   
   google: {
@@ -95,6 +96,7 @@ class ClientService {
       slug: client.slug,
       name: client.name,
       isActive: client.isActive,
+      webhookUrl: client.webhookUrl ?? undefined,
       timezone: client.timezone,
       google: {
         credentials: credentials

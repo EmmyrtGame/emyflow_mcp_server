@@ -49,6 +49,11 @@ export const clientService = {
   getCredentials: () => api.get('/credentials').then(res => res.data)
 };
 
+export const analyticsService = {
+  getStats: (clientId: string) => api.get(`/clients/${clientId}/analytics`).then(res => res.data),
+  getEvents: (clientId: string, params?: any) => api.get(`/clients/${clientId}/events`, { params }).then(res => res.data),
+};
+
 export const userService = {
   getAll: () => api.get('/users').then(res => res.data),
   create: (data: any) => api.post('/users', data).then(res => res.data),
@@ -56,3 +61,4 @@ export const userService = {
 };
 
 export default api;
+

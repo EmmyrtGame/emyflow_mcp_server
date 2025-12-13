@@ -5,6 +5,7 @@ import { scheduleAppointmentReminders } from './wassenger';
 import { trackScheduleEvent } from './marketing';
 import { addLabelToChat } from './crm';
 import { DateTime } from 'luxon';
+import { analyticsService } from '../services/analytics.service';
 
 /**
  * Checks appointment availability in Google Calendar.
@@ -336,6 +337,9 @@ export const calendarCreateAppointment = async (args: {
       phone_number: patient_data.telefono,
       labels: ["humano", "cita agendada"]
     });
+
+    // Track APPOINTMENT event for analytics
+    analyticsService.recordEvent(client_id, 'APPOINTMENT', patient_data.telefono);
 
     return { content: [{ type: "text", text: JSON.stringify({ success: true, eventId: response.data.id }) }] };
   } catch (error: any) {

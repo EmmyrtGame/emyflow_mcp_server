@@ -35,6 +35,10 @@ model Client {
   // Relations
   serviceAccountId String?
   serviceAccount   ServiceAccount? @relation(fields: [serviceAccountId], references: [id])
+  
+  // Analytics Relations
+  events  ClientEvent[]
+  stats   ClientStats?
 
   // Metadatos
   timezone              String  @default("America/Mexico_City")
@@ -51,4 +55,42 @@ model ServiceAccount {
   updatedAt   DateTime @updatedAt
   
   clients     Client[]
+}
+
+// Tracks individual events for granular analysis
+model ClientEvent {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  eventType String   // 'LEAD', 'APPOINTMENT', 'MESSAGE', 'HANDOFF', 'NEW_CONVERSATION'
+  phone     String?  // Associated phone number (for deduplication/analysis)
+  metadata  Json?    // Optional additional data
+  createdAt DateTime @default(now())
+  
+  @@index([clientId, eventType, createdAt])
+  @@index([clientId, createdAt])
+}
+
+// Pre-aggregated counters for O(1) dashboard reads
+model ClientStats {
+  id                  String   @id @default(cuid())
+  clientId            String   @unique
+  client              Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // Lifetime counters
+  totalLeads          Int      @default(0)
+  totalAppointments   Int      @default(0)
+  totalMessages       Int      @default(0)
+  totalHandoffs       Int      @default(0)
+  totalNewConversations Int    @default(0)
+  
+  // Monthly counters (current month)
+  monthlyLeads        Int      @default(0)
+  monthlyAppointments Int      @default(0)
+  monthlyMessages     Int      @default(0)
+  monthlyHandoffs     Int      @default(0)
+  monthlyNewConversations Int  @default(0)
+  currentMonth        String?  // "2025-12" format for reset logic
+  
+  updatedAt           DateTime @updatedAt
 }

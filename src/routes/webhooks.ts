@@ -3,6 +3,7 @@ import axios from 'axios';
 import { clientService } from '../services/client.service';
 import { trackLeadEvent } from '../tools/marketing';
 import { updateContactMetadata } from '../tools/crm';
+import { analyticsService } from '../services/analytics.service';
 
 const router = express.Router();
 
@@ -40,6 +41,16 @@ router.post('/whatsapp', async (req, res) => {
              if (targetId) {
                 humanHandoffState[targetId] = Date.now();
                 console.log(`[Handoff] Human agent detected for ${targetId}. AI paused for 30m.`);
+                
+                // Track HANDOFF event for analytics
+                const deviceId = req.body.device?.id;
+                if (deviceId) {
+                   clientService.getClientByDeviceId(deviceId).then(config => {
+                     if (config) {
+                       analyticsService.recordEvent(config.slug, 'HANDOFF', targetId);
+                     }
+                   }).catch(() => {});
+                }
              }
         } else {
              // API message, ignored
@@ -81,37 +92,55 @@ router.post('/whatsapp', async (req, res) => {
     // ---------------------------------------------------------
     // 3. LEAD TRACKING (Original Logic)
     // ---------------------------------------------------------
+    // ---------------------------------------------------------
+    // 3a. ANALYTICS: Track incoming message
+    // ---------------------------------------------------------
+    const deviceId = req.body.device?.id;
+    let clientSlug: string | null = null;
+    
+    if (deviceId) {
+       const clientConfig = await clientService.getClientByDeviceId(deviceId);
+       if (clientConfig) {
+          clientSlug = clientConfig.slug;
+          
+          // Track MESSAGE event
+          analyticsService.recordEvent(clientSlug, 'MESSAGE', userId);
+          
+          // Track NEW_CONVERSATION if first message
+          if (data.meta?.isFirstMessage === true) {
+             analyticsService.recordEvent(clientSlug, 'NEW_CONVERSATION', userId);
+          }
+       }
+    }
+    
+    // ---------------------------------------------------------
+    // 3b. LEAD TRACKING (Original Logic with analytics hook)
+    // ---------------------------------------------------------
     if (data.flow === 'inbound' && data.meta && data.meta.isFirstMessage === false) {
        const contactMetadata = data.chat?.contact?.metadata || [];
        const isLeadSent = contactMetadata.some((m: any) => m.key === 'capi_lead_enviado' && m.value === 'true');
        
-       if (!isLeadSent) {
-         const deviceId = req.body.device?.id;
-         
-         if (deviceId) {
-            const clientConfig = await clientService.getClientByDeviceId(deviceId);
-            if (clientConfig) {
-               const clientId = clientConfig.slug;
-               console.log(`[Webhook] Detected potential Lead for client ${clientId} (Device: ${deviceId})`);
-               
+       if (!isLeadSent && deviceId && clientSlug) {
+               console.log(`[Webhook] Detected potential Lead for client ${clientSlug} (Device: ${deviceId})`);
                
                trackLeadEvent({
-                 client_id: clientId,
+                 client_id: clientSlug,
                  user_data: {
                    phone: userId // fromNumber
                  }
                }).then(async (result) => {
                   if (result && result.success) {
+                     // Track LEAD event for analytics
+                     analyticsService.recordEvent(clientSlug!, 'LEAD', userId);
+                     
                      await updateContactMetadata({
-                       client_id: clientId,
+                       client_id: clientSlug!,
                        phone_number: userId,
                        metadata: { 'capi_lead_enviado': 'true' }
                      }).catch((err: any) => console.error('[Webhook] Failed to update lead metadata:', err));
                   }
                }).catch((err: any) => console.error('[Webhook] Failed to track automated Lead:', err));
-            }
-         }
-       } else {
+       } else if (isLeadSent) {
          console.log(`[Webhook] Lead event skipped for ${userId}: 'capi_lead_enviado' metadata already true.`);
        }
     }

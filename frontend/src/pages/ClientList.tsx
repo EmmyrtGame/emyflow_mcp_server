@@ -21,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, BarChart3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { clientService } from '@/services/api';
 
@@ -154,7 +154,10 @@ export default function ClientList() {
                                         </TableCell>
                                         <TableCell>{client.timezone}</TableCell>
                                         <TableCell>{new Date(client.createdAt).toLocaleDateString()}</TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-1">
+                                            <Button variant="ghost" size="sm" onClick={() => navigate(`/clients/${client.id}/analytics`)}>
+                                                <BarChart3 className="h-4 w-4" />
+                                            </Button>
                                             <Button variant="ghost" size="sm" onClick={() => navigate(`/clients/${client.id}`)}>Edit</Button>
                                         </TableCell>
                                     </TableRow>

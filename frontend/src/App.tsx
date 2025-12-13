@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Layout from './Layout';
 import ClientList from './pages/ClientList';
 import ClientEditor from './pages/ClientEditor';
+import ClientAnalytics from './pages/ClientAnalytics';
 import UserList from './pages/UserList';
 import { Toaster } from "@/components/ui/sonner"
 
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="clients" element={<ClientList />} />
             <Route path="clients/new" element={<ClientEditor />} />
             <Route path="clients/:id" element={<ClientEditor />} />
+            <Route path="clients/:id/analytics" element={<ClientAnalytics />} />
             <Route path="users" element={<UserList />} />
             <Route path="dashboard" element={<div>Dashboard Overview (Coming Soon)</div>} />
             <Route path="settings" element={<div>Settings (Coming Soon)</div>} />

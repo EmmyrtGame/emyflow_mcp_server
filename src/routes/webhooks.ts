@@ -88,6 +88,18 @@ router.post('/whatsapp', async (req, res) => {
          // data.from is the JID on inbound. So the above check 'userJid' should suffice.
          // Just in case, let's just stick to JID.
     }
+
+    // ---------------------------------------------------------
+    // 2b. CHECK FOR "humano" LABEL (Permanent suppression via MCP tool)
+    // ---------------------------------------------------------
+    // This is different from the temporary handoff above.
+    // When the crmHandoffHuman MCP tool is used, it adds the "humano" label.
+    // AI should be suppressed PERMANENTLY until the label is manually removed.
+    const chatLabels = data.chat?.labels || [];
+    if (chatLabels.includes('humano')) {
+        console.log(`[Handoff] AI permanently suppressed for ${userJid}: "humano" label detected in chat.`);
+        return res.status(200).send('Suppressed by "humano" label');
+    }
     
     // ---------------------------------------------------------
     // 3. LEAD TRACKING (Original Logic)

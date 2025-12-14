@@ -278,12 +278,18 @@ export const calendarCreateAppointment = async (args: {
   const calendar = google.calendar({ version: 'v3', auth });
 
 
+  // Parse dates to ISO format for Google Calendar API
+  const startDateTime = parseInputDate(start_time, clientConfig.timezone);
+  const endDateTime = parseInputDate(end_time, clientConfig.timezone);
+  const startIso = startDateTime.toISO()!;
+  const endIso = endDateTime.toISO()!;
+
   const checkPromises = availabilityCalendars.map(async (calId) => {
     try {
       const response = await calendar.events.list({
         calendarId: calId,
-        timeMin: start_time,
-        timeMax: end_time,
+        timeMin: startIso,
+        timeMax: endIso,
         singleEvents: true,
       });
       return response.data.items || [];
@@ -305,8 +311,8 @@ export const calendarCreateAppointment = async (args: {
     const event = {
       summary: `Evaluación Dental: ${patient_data.nombre}`,
       description: description,
-      start: { dateTime: start_time },
-      end: { dateTime: end_time },
+      start: { dateTime: startIso, timeZone: clientConfig.timezone },
+      end: { dateTime: endIso, timeZone: clientConfig.timezone },
     };
 
     const response = await calendar.events.insert({
@@ -318,7 +324,7 @@ export const calendarCreateAppointment = async (args: {
     await scheduleAppointmentReminders(
       client_id, 
       patient_data.telefono, 
-      start_time, 
+      startIso, 
       patient_data.nombre,
       locationConfig // Pass location config if available
     );

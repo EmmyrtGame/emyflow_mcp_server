@@ -5,7 +5,7 @@
     "main": "dist/index.js",
     "scripts": {
         "build": "npx prisma generate && tsc && cd frontend && npm install && npm run build",
-        "start": "node dist/index.js",
+        "start": "pm2-runtime start dist/index.js -i 1 --name emyflow-mcp",
         "dev": "concurrently \"npm run dev:server\" \"npm run dev:frontend\"",
         "dev:server": "nodemon src/index.ts",
         "dev:frontend": "cd frontend && npm run dev",

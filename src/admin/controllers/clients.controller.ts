@@ -107,6 +107,17 @@ class ClientsController {
       // NOTE: We'll modify the data object before saving
       const dataToSave = { ...data } as any;
       
+      // Handle Google Service Account selection from existing credentials
+      // Format: db://email@example.com -> lookup ServiceAccount by email
+      const googleConfig = (req.body as any).google;
+      if (googleConfig?.serviceAccountPath && googleConfig.serviceAccountPath.startsWith('db://')) {
+        const email = googleConfig.serviceAccountPath.replace('db://', '');
+        const serviceAccount = await prisma.serviceAccount.findFirst({ where: { email } });
+        if (serviceAccount) {
+          dataToSave.serviceAccountId = serviceAccount.id;
+        }
+      }
+      
       delete dataToSave.google;
 
       if (dataToSave.meta?.accessToken) {
@@ -170,6 +181,17 @@ class ClientsController {
 
       // Merge JSON fields manually as Prisma replaces them
       const updatedData = { ...data };
+      
+      // Handle Google Service Account selection from existing credentials
+      // Format: db://email@example.com -> lookup ServiceAccount by email
+      const googleConfig = (req.body as any).google;
+      if (googleConfig?.serviceAccountPath && googleConfig.serviceAccountPath.startsWith('db://')) {
+        const email = googleConfig.serviceAccountPath.replace('db://', '');
+        const serviceAccount = await prisma.serviceAccount.findFirst({ where: { email } });
+        if (serviceAccount) {
+          updatedData.serviceAccountId = serviceAccount.id;
+        }
+      }
       
       delete updatedData.google;
 

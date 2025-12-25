@@ -108,11 +108,17 @@ class ClientsController {
       const dataToSave = { ...data } as any;
       
       // Handle Google Service Account selection from existing credentials
-      // Format: db://email@example.com -> lookup ServiceAccount by email
+      // Format: db://email@example.com -> lookup ServiceAccount by email OR name
       const googleConfig = (req.body as any).google;
       if (googleConfig?.serviceAccountPath && googleConfig.serviceAccountPath.startsWith('db://')) {
-        const email = googleConfig.serviceAccountPath.replace('db://', '');
-        const serviceAccount = await prisma.serviceAccount.findFirst({ where: { email } });
+        const identifier = googleConfig.serviceAccountPath.replace('db://', '');
+        
+        // Try to find by email first, then by name as fallback
+        let serviceAccount = await prisma.serviceAccount.findFirst({ where: { email: identifier } });
+        if (!serviceAccount) {
+          serviceAccount = await prisma.serviceAccount.findFirst({ where: { name: identifier } });
+        }
+        
         if (serviceAccount) {
           dataToSave.serviceAccountId = serviceAccount.id;
         }
@@ -183,11 +189,17 @@ class ClientsController {
       const updatedData = { ...data };
       
       // Handle Google Service Account selection from existing credentials
-      // Format: db://email@example.com -> lookup ServiceAccount by email
+      // Format: db://email@example.com -> lookup ServiceAccount by email OR name
       const googleConfig = (req.body as any).google;
       if (googleConfig?.serviceAccountPath && googleConfig.serviceAccountPath.startsWith('db://')) {
-        const email = googleConfig.serviceAccountPath.replace('db://', '');
-        const serviceAccount = await prisma.serviceAccount.findFirst({ where: { email } });
+        const identifier = googleConfig.serviceAccountPath.replace('db://', '');
+        
+        // Try to find by email first, then by name as fallback
+        let serviceAccount = await prisma.serviceAccount.findFirst({ where: { email: identifier } });
+        if (!serviceAccount) {
+          serviceAccount = await prisma.serviceAccount.findFirst({ where: { name: identifier } });
+        }
+        
         if (serviceAccount) {
           updatedData.serviceAccountId = serviceAccount.id;
         }
